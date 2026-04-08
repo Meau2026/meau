@@ -1,10 +1,10 @@
 import React, {useState, useEffect} from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity,View, SafeAreaView, Button, FlatList, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, TextInput, TouchableOpacity,View, Button, FlatList, ActivityIndicator } from 'react-native';
 import {db} from '../../firebaseConfig.js';
 import { collection , addDoc, getDocs } from 'firebase/firestore';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
-
-
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 interface Entry {
   id: string;
   name: string;
@@ -15,15 +15,21 @@ export default function FireBaseTest() {
   const [loading, setLoading] = useState(true);
 
 	return (
-		<SafeAreaView style={styles.container}>
+		<SafeAreaView style={styles.container}  edges={['top', 'left', 'right']}>
+    <StatusBar 
+        style="dark"         
+        backgroundColor="#87C9BF" 
+        translucent={false}    
+      />
 			<View style={styles.header}>
 				<Ionicons name="menu" size={32}/>
 				<Text style={styles.header_text}>Login</Text>
 			</View>
 
-			<View style={{ height: 50 }} />
+			
 			
 			<View style={styles.layout}>
+      <View style={{height:40}}/>
 				<TextInput
 					style={styles.input}
 					placeholder="Nome de usuario"
@@ -58,8 +64,8 @@ const styles = StyleSheet.create({
 
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-},
+   	backgroundColor: '#87C9BF',
+  },
 	header: {
 	flexDirection: 'row',
 	height: 75,
@@ -77,15 +83,19 @@ const styles = StyleSheet.create({
 
 	},
 	layout: {
-		justifyContent: 'center',
+    
+    flex: 1,
+		//justifyContent: 'center',
 		alignItems: 'center',
-		gap: 5,
+		gap: 5, 
+    backgroundColor: '#fff',
 	},
 
 	input:{
-		height: 30,
+		height: 45,
 		width: '75%',
 		fontSize: 18,
+    
 	},
 	button:{
 		flexDirection: 'row',
@@ -96,7 +106,6 @@ const styles = StyleSheet.create({
 		width: '60%',
 		padding:15,
 		borderRadius: 3,
-		elavation: 8,
 		shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -105,7 +114,7 @@ const styles = StyleSheet.create({
 	button_entrar: {
     backgroundColor: '#87C9BF',
 		marginBottom: 70,
-		marginTop: 40,
+		marginTop: 50,
   },
   button_facebook: {
     backgroundColor: '#1976D2',
