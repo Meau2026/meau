@@ -3,20 +3,22 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 export default function TelaInicial() {
     return (
-        <View style={styles.layout}>
+        <SafeAreaView style={styles.layout}>
             <Ionicons name="menu-outline" size={24} color="#88C9BF" padding={12} />
             <View style={styles.layout2}>
-                <View style={{ height: 56 }} />
+                <View style={{ height: 50 }} />
                 <Text style={styles.title_text}>Olá!</Text>
-                <View style={{ height: 52 }} />
+                <View style={{height: 20  }} />
                 <Text style={styles.text}>
                     Bem vindo ao Meau!{'\n'}
                     Aqui você pode adotar, doar e ajudar cães e gatos com facilidade.{'\n'}
                     Qual o seu interesse?
                 </Text>
-                <View style={{ height: 48 }} />
+                <View style={{ height: 15 }} />
                 <TouchableOpacity style={[styles.button]}>
                     <Text style={styles.button_text}>ADOTAR</Text>
                 </TouchableOpacity>
@@ -30,9 +32,9 @@ export default function TelaInicial() {
                     <Text style={styles.login_text}>login</Text>
                 </TouchableOpacity>
 
-                <Image source={require('../../assets/images/Meau_marca_2.png')} style={{ width: 122, height: 44 }} />
+                <Image source={require('../../assets/images/Meau_marca_2.png')} style={{ width: 122, height: 44}} />
             </View>
-        </View>
+        </SafeAreaView>
     );
 }
 
