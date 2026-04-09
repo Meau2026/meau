@@ -27,7 +27,7 @@ export default function TelaInicial() {
                     <Text style={styles.button_text}>CADASTRAR ANIMAL</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.button_entrar]}>
-                    <Text>login</Text>
+                    <Text style={styles.login_text}>login</Text>
                 </TouchableOpacity>
 
                 <Image source={require('../../assets/images/Meau_marca_2.png')} style={{ width: 122, height: 44 }} />
@@ -66,6 +66,11 @@ const styles = StyleSheet.create({
     button_text: {
         fontSize: 12,
         color: '#434343',
+    },
+
+    login_text: {
+        fontSize: 12,
+        color: '#88C9BF',
     },
 
     button: {
