@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     },
 
     login_text: {
-        fontSize: 12,
+        fontSize: 16,
         color: '#88C9BF',
     },
 
