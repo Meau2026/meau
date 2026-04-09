@@ -22,7 +22,11 @@ export default function FireBaseTest() {
         translucent={false}    
       />
 			<View style={styles.header}>
-				<Ionicons name="menu" size={32}/>
+
+				<TouchableOpacity>
+				  <Ionicons name="menu" size={32}/>
+				</TouchableOpacity>
+
 				<Text style={styles.header_text}>Login</Text>
 			</View>
 
@@ -95,6 +99,9 @@ const styles = StyleSheet.create({
 		height: 45,
 		width: '75%',
 		fontSize: 18,
+    borderWidth: 1,
+    borderRadius: 3,
+  borderColor: '#e0e0e0',
     
 	},
 	button:{
