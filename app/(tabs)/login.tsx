@@ -1,44 +1,44 @@
-import React, {useState, useEffect} from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity,View, Button, FlatList, ActivityIndicator } from 'react-native';
-import {db} from '../../firebaseConfig.js';
-import { collection , addDoc, getDocs } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View, Button, FlatList, ActivityIndicator } from 'react-native';
+import { db } from '../../firebaseConfig.js';
+import { collection, addDoc, getDocs } from 'firebase/firestore';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 interface Entry {
-  id: string;
-  name: string;
+	id: string;
+	name: string;
 }
 
 export default function FireBaseTest() {
-  const [entries, setEntries] = useState<Entry[]>([]);
-  const [loading, setLoading] = useState(true);
+	const [entries, setEntries] = useState<Entry[]>([]);
+	const [loading, setLoading] = useState(true);
 
 	return (
-		<SafeAreaView style={styles.container}  edges={['top', 'left', 'right']}>
-    <StatusBar 
-        style="dark"         
-        backgroundColor="#87C9BF" 
-        translucent={false}    
-      />
+		<SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+			<StatusBar
+				style="dark"
+				backgroundColor="#87C9BF"
+				translucent={false}
+			/>
 			<View style={styles.header}>
 
 				<TouchableOpacity>
-				  <Ionicons name="menu" size={32}/>
+					<Ionicons name="menu" size={32} />
 				</TouchableOpacity>
 
 				<Text style={styles.header_text}>Login</Text>
 			</View>
 
-			
-			
+
+
 			<View style={styles.layout}>
-      <View style={{height:40}}/>
+				<View style={{ height: 40 }} />
 				<TextInput
 					style={styles.input}
 					placeholder="Nome de usuario"
 				/>
-				<TextInput 
+				<TextInput
 					style={styles.input}
 					placeholder="Senha"
 					secureTextEntry={true}
@@ -46,19 +46,19 @@ export default function FireBaseTest() {
 				<TouchableOpacity style={[styles.button, styles.button_entrar]}>
 					<Text>ENTRAR</Text>
 				</TouchableOpacity>
-				
-							
+
+
 				<TouchableOpacity style={[styles.button, styles.button_facebook]}>
-				<FontAwesome name="facebook-square" size={24} color="white" />
-					<Text style={{color: '#FFFFFF'}}>ENTRAR COM FACEBOOK</Text>
+					<FontAwesome name="facebook-square" size={24} color="white" />
+					<Text style={{ color: '#FFFFFF' }}>ENTRAR COM FACEBOOK</Text>
 				</TouchableOpacity>
 
 				<TouchableOpacity style={[styles.button, styles.button_google]}>
 					<FontAwesome name="google" size={24} color="white" />
-					<Text style={{color: '#FFFFFF'}}>ENTRAR COM GOOGLE</Text>
+					<Text style={{ color: '#FFFFFF' }}>ENTRAR COM GOOGLE</Text>
 				</TouchableOpacity>
 			</View>
-    </SafeAreaView>
+		</SafeAreaView>
 
 	);
 
@@ -66,68 +66,68 @@ export default function FireBaseTest() {
 
 const styles = StyleSheet.create({
 
-  container: {
-    flex: 1,
-   	backgroundColor: '#87C9BF',
-  },
+	container: {
+		flex: 1,
+		backgroundColor: '#87C9BF',
+	},
 	header: {
-	flexDirection: 'row',
-	height: 75,
-	width: '100%',
-  alignItems: 'center',
-  justifyContent: 'flex-start',
-	backgroundColor: '#CFE9E5',
-	padding: 15,
-	gap: 30,
+		flexDirection: 'row',
+		height: 75,
+		width: '100%',
+		alignItems: 'center',
+		justifyContent: 'flex-start',
+		backgroundColor: '#CFE9E5',
+		padding: 15,
+		gap: 30,
 	},
 
 	header_text: {
-		fontSize:24,
-		fontWeight:'bold',
+		fontSize: 24,
+		fontWeight: 'bold',
 
 	},
 	layout: {
-    
-    flex: 1,
+
+		flex: 1,
 		//justifyContent: 'center',
 		alignItems: 'center',
-		gap: 5, 
-    backgroundColor: '#fff',
+		gap: 5,
+		backgroundColor: '#fff',
 	},
 
-	input:{
+	input: {
 		height: 45,
 		width: '75%',
 		fontSize: 18,
-    borderWidth: 1,
-    borderRadius: 3,
-  borderColor: '#e0e0e0',
-    
+		borderWidth: 1,
+		borderRadius: 3,
+		borderColor: '#e0e0e0',
+
 	},
-	button:{
+	button: {
 		flexDirection: 'row',
 		gap: 10,
 		justifyContent: 'center',
 		alignItems: 'center',
-		height:60,
+		height: 60,
 		width: '60%',
-		padding:15,
+		padding: 15,
 		borderRadius: 3,
 		shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+		shadowOffset: { width: 0, height: 4 },
+		shadowOpacity: 0.3,
+		shadowRadius: 4,
 	},
 	button_entrar: {
-    backgroundColor: '#87C9BF',
+		backgroundColor: '#87C9BF',
 		marginBottom: 70,
 		marginTop: 50,
-  },
-  button_facebook: {
-    backgroundColor: '#1976D2',
-  },
-  button_google: {
-    backgroundColor: '#E57373', 
-  },
+	},
+	button_facebook: {
+		backgroundColor: '#1976D2',
+	},
+	button_google: {
+		backgroundColor: '#E57373',
+	},
 
 });
