@@ -1,18 +1,46 @@
 import React, {useState, useEffect} from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity,View, Button, FlatList, ActivityIndicator } from 'react-native';
-import {db} from '../../firebaseConfig.js';
-import { collection , addDoc, getDocs } from 'firebase/firestore';
+import { StyleSheet, Text, TextInput, TouchableOpacity,View, Alert} from 'react-native';
+
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-interface Entry {
-  id: string;
-  name: string;
-}
+
+
+import { auth } from '../../firebaseConfig'
+
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth'
+
+
+
+
 
 export default function FireBaseTest() {
-  const [entries, setEntries] = useState<Entry[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+
+  const singIn = async () => {
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      Alert.alert(`login com UID: ${userCredential.user.uid}`)
+    } catch (e) {
+      console.log(e)
+      Alert.alert(`deu ruim: ${e.message}`)
+    }
+
+  }
+
+  const signUp = async () => {
+    
+    try {
+      const user = await createUserWithEmailAndPassword(auth, email, password)
+    } catch (e) {
+      console.log(e)
+    }
+  }
+
+  
 
 	return (
 		<SafeAreaView style={styles.container}  edges={['top', 'left', 'right']}>
@@ -36,14 +64,22 @@ export default function FireBaseTest() {
       <View style={{height:40}}/>
 				<TextInput
 					style={styles.input}
-					placeholder="Nome de usuario"
+					placeholder="Email"
+          value={email}
+          onChangeText={(email) => setEmail(email)}
+
 				/>
 				<TextInput 
 					style={styles.input}
 					placeholder="Senha"
 					secureTextEntry={true}
+          value={password}
+          onChangeText={(password) => setPassword(password)}
 				/>
-				<TouchableOpacity style={[styles.button, styles.button_entrar]}>
+
+				<TouchableOpacity style={[styles.button, styles.button_entrar]}
+          onPress={singIn}
+        >
 					<Text>ENTRAR</Text>
 				</TouchableOpacity>
 				
