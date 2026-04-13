@@ -1,7 +1,10 @@
 import React, {useState, useEffect} from 'react';
-import { StyleSheet, Text, View, Button, FlatList, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, Button, FlatList, ActivityIndicator,Alert, TouchableOpacity, } from 'react-native';
 import {db} from '../../firebaseConfig.js';
 import { collection , addDoc, getDocs } from 'firebase/firestore';
+
+import { auth } from '@/firebaseConfig'; 
+import { signOut } from 'firebase/auth';
 
 
 
@@ -54,6 +57,16 @@ export default function FireBaseTest() {
     }
 
   }
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+ 
+    } catch (error: any) {
+      Alert.alert("Erro ao sair", error.message);
+    }
+  };
+
   useEffect(() => {readTest();}, [] );
 	return (
 		<View>
@@ -68,6 +81,9 @@ export default function FireBaseTest() {
       ListEmptyComponent={<Text>tem nada aqui nao meu mestre, aperta o botao.</Text>}
     />
 		<Button title="envia pro firebase" onPress={writeTest}/>
+    <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+      <Text style={styles.logoutText}>Logout Test</Text>
+    </TouchableOpacity>
     </View>
 
 	);
@@ -81,4 +97,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
 },
+logoutButton: {
+    backgroundColor: '#ff4444',
+    padding: 15,
+    borderRadius: 8,
+    margin: 20,
+    alignItems: 'center',
+  },
+  logoutText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
 });
