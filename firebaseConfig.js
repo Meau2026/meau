@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
-
+import { Platform } from 'react-native';
 // Optionally import the services that you want to use
- import { initializeAuth, getReactNativePersistence} from 'firebase/auth';
+ import { initializeAuth, browserLocalPersistence, getReactNativePersistence} from 'firebase/auth';
 // import {...} from 'firebase/database';
 import { getFirestore } from 'firebase/firestore';
 // import {...} from 'firebase/functions';
@@ -29,7 +29,18 @@ const app = initializeApp(firebaseConfig); //conexao com o firebase
 export const db = getFirestore(app);
 
 // usamos async storage pra manter user logado apos fechar o app
-export const auth = initializeAuth(app, {
-  persistence:  getReactNativePersistence(AsyncStorage)
+let auth;
 
-});
+if (Platform.OS === 'web') {
+  // Configuração para Web
+  auth = initializeAuth(app, {
+    persistence: browserLocalPersistence,
+  });
+} else {
+  // Configuração para Mobile 
+  auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(AsyncStorage),
+  });
+}
+
+export { auth };
