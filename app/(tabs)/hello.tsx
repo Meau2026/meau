@@ -1,11 +1,11 @@
 import React, {useState, useEffect} from 'react';
-import { StyleSheet, Text, View, Button, FlatList, ActivityIndicator,Alert, TouchableOpacity, } from 'react-native';
+import { StyleSheet, Text, View, Button, FlatList, ActivityIndicator,Alert, TouchableOpacity, TextInput} from 'react-native';
 import {db} from '../../firebaseConfig.js';
 import { collection , addDoc, getDocs } from 'firebase/firestore';
 
 import { auth } from '@/firebaseConfig'; 
 import { signOut } from 'firebase/auth';
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 interface Entry {
@@ -16,16 +16,24 @@ interface Entry {
 export default function FireBaseTest() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [name, setName] = useState('');
 
   const writeTest = async () => {
     try {
+    
       const docRef = await addDoc(collection(db, "test"), {
-        name: "junin da capitinga",
+        name: name,
         sapato: 48,
         sabor: "energetico"
       });
 
       console.log("document written with ID: ", docRef.id);
+      
+    
+      await readTest(); 
+      setName(''); 
+
+
     } catch (e) {
       console.error("deu ruim paizao", e);
     }
@@ -69,7 +77,7 @@ export default function FireBaseTest() {
 
   useEffect(() => {readTest();}, [] );
 	return (
-		<View>
+		<SafeAreaView style={styles.container}>
     <FlatList
       data={entries}
       keyExtractor={(item) => item.id}
@@ -80,11 +88,19 @@ export default function FireBaseTest() {
       )}
       ListEmptyComponent={<Text>tem nada aqui nao meu mestre, aperta o botao.</Text>}
     />
+
+	<TextInput
+					style={styles.input}
+					placeholder="Name"
+          value={name}
+          onChangeText={(name) => setName(name)}
+
+				/>
 		<Button title="envia pro firebase" onPress={writeTest}/>
     <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
       <Text style={styles.logoutText}>Logout Test</Text>
     </TouchableOpacity>
-    </View>
+    </SafeAreaView>
 
 	);
 
@@ -93,7 +109,7 @@ export default function FireBaseTest() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#fafafa',
     alignItems: 'center',
     justifyContent: 'center',
 },
@@ -108,4 +124,13 @@ logoutButton: {
     color: 'white',
     fontWeight: 'bold',
   },
+  input: {
+		height: 45,
+		width: '75%',
+		fontSize: 18,
+		borderWidth: 1,
+		borderRadius: 3,
+		borderColor: '#e0e0e0',
+
+	},
 });
