@@ -1,4 +1,4 @@
-import { Courgette_400Regular, useFonts } from '@expo-google-fonts/courgette';
+
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
@@ -12,9 +12,7 @@ interface Entry {
 }
 
 export default function OpsCadastroScreen() {
-	let [fontsLoaded] = useFonts({
-		Courgette_400Regular
-	});
+
 	const [entries, setEntries] = useState<Entry[]>([]);
 	const [loading, setLoading] = useState(true);
 
@@ -91,7 +89,7 @@ const styles = StyleSheet.create({
 	},
 
 	opsText: {
-		fontFamily: 'Courgette_400Regular',
+		fontFamily: 'Courgette',
 		fontSize: 53,
 		color: '#88C9BF',
 		marginBottom: 40,

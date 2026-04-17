@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
     },
 
     title_text: {
-        fontFamily: 'Courgette_400Regular',
+        fontFamily: 'Courgette',
         color: '#FFD358',
         fontSize: 72,
     },
