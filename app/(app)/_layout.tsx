@@ -4,7 +4,8 @@ import { Drawer } from 'expo-router/drawer';
 import { 
   DrawerContentComponentProps,
   DrawerContentScrollView, 
-  DrawerItemList 
+  DrawerItemList,
+  DrawerItem
 } from '@react-navigation/drawer';
 
 import {View, StyleSheet , Alert, TouchableOpacity, Text, LayoutAnimation }from 'react-native';
@@ -30,14 +31,46 @@ const handleLogout = async () => {
     }
   };
 
+const createLocalNavegation = (props: DrawerContentComponentProps) => {
+  return (route) => {
+    props.navigation.navigate(route); 
+  }
+}
+
+const Separator = () => (<View style={styles.separator} />);
 
 function Atalhos(props: DrawerContentComponentProps){
   const [expanded, setExpanded] = useState(false);
-
+  
+  const navigate = createLocalNavegation(props)
 
   const body = (
     <View>
-      <Text> test </Text>
+      <DrawerItem 
+        label= 'Cadastar um pet'
+        labelStyle={styles.text_entry}
+        onPress={() => navigate('hello')}
+      />
+      <Separator/>
+      <DrawerItem 
+        label= 'Adotar um pet'
+        labelStyle={styles.text_entry}
+        
+        onPress={() => navigate('hello')}
+      />
+      <Separator/>
+      <DrawerItem 
+        label= 'Ajudar um pet'
+        labelStyle={styles.text_entry}
+        
+        onPress={() => navigate('hello')}
+      />
+      <Separator/>
+    <DrawerItem 
+        label= 'Apadrinhar um pet'
+        labelStyle={styles.text_entry} 
+        onPress={() => navigate('hello')}
+      />
     </View>
   );
 
@@ -59,6 +92,69 @@ function Atalhos(props: DrawerContentComponentProps){
 
 }
 
+function Informacoes(props: DrawerContentComponentProps){
+  const [expanded, setExpanded] = useState(false);
+  
+  const navigate = createLocalNavegation(props)
+
+  const body = (
+    <View>
+      <DrawerItem 
+        label= 'Dicas'
+        labelStyle={styles.text_entry}
+        onPress={() => navigate('hello')}
+      />
+      <Separator/>
+      <DrawerItem 
+        label= 'Eventos'
+        labelStyle={styles.text_entry}
+        
+        onPress={() => navigate('hello')}
+      />
+      <Separator/>
+      <DrawerItem 
+        label= 'Legislação'
+        labelStyle={styles.text_entry}
+        
+        onPress={() => navigate('hello')}
+      />
+      <Separator/>
+    <DrawerItem 
+        label= 'Termo de adoção'
+        labelStyle={styles.text_entry} 
+        onPress={() => navigate('hello')}
+      />
+  <Separator/>
+      <DrawerItem 
+        label= 'Histórias de adoção'
+        labelStyle={styles.text_entry}
+        
+        onPress={() => navigate('hello')}
+      />
+
+    </View>
+  );
+
+  return(
+    <View>
+     <TouchableOpacity 
+    style = {styles.informacoes}
+    onPress={() => {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setExpanded(!expanded);
+    }}>
+      <Text> Informações </Text>
+    </TouchableOpacity>
+
+    { expanded && body }
+    </View>
+
+  );
+
+}
+
+
+
 function CustomDrawerContent(props: DrawerContentComponentProps){
 
   return(
@@ -70,7 +166,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps){
       </View>
     
     <Atalhos{...props}/>
-    <DrawerContentScrollView {...props}>
+    <Informacoes{...props}/>
+  <DrawerContentScrollView {...props}>
       <DrawerItemList {...props} />
     </DrawerContentScrollView>
     <TouchableOpacity 
@@ -138,6 +235,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#fee29b',
     justifyContent: 'center',
   },
+  informacoes: {
+    height: 48,
+    width:304,
+    backgroundColor: '#cfe9e5',
+    justifyContent: 'center',
+
+  },
+  separator: {
+    width: 256,
+    height: 1,
+    backgroundColor: '#e6e7e8', 
+    marginLeft: 48,
+  },
+  text_entry:{
+    fontFamily: 'Roboto-Regular', 
+    fontSize: 14,
+    color: '#434343',
+    marginLeft: 48,
+  } 
+
 
 
 
