@@ -11,7 +11,7 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 
-import { useFonts, Roboto_400Regular } from '@expo-google-fonts/roboto';
+import { useFonts, Roboto_400Regular, Roboto_500Medium } from '@expo-google-fonts/roboto';
 import { Courgette_400Regular } from '@expo-google-fonts/courgette';
 import * as SplashScreen from 'expo-splash-screen';
 
@@ -68,6 +68,7 @@ export default function RootLayout() {
 
   const [loaded, error] = useFonts({
     'Roboto-Regular': Roboto_400Regular,
+    'Roboto-Medium' : Roboto_500Medium,
     'Courgette': Courgette_400Regular,
   });
 

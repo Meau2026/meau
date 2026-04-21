@@ -12,7 +12,7 @@ import {View, StyleSheet , Alert, TouchableOpacity, Text, LayoutAnimation }from 
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-
+import { Ionicons, FontAwesome } from '@expo/vector-icons';
 
 import React, { useState } from 'react';
 
@@ -31,6 +31,8 @@ const handleLogout = async () => {
     }
   };
 
+
+
 const createLocalNavegation = (props: DrawerContentComponentProps) => {
   return (route) => {
     props.navigation.navigate(route); 
@@ -38,6 +40,69 @@ const createLocalNavegation = (props: DrawerContentComponentProps) => {
 }
 
 const Separator = () => (<View style={styles.separator} />);
+
+
+function Header(props: DrawerContentComponentProps){
+  const [expanded, setExpanded] = useState(false);
+  
+  const navigate = createLocalNavegation(props)
+
+  const body = (
+    <View>
+      <DrawerItem 
+        label= 'Meu perfil'
+        labelStyle={styles.text_entry}
+        onPress={() => navigate('hello')}
+      />
+      <Separator/>
+      <DrawerItem 
+        label= 'Meus pets'
+        labelStyle={styles.text_entry}
+        
+        onPress={() => navigate('hello')}
+      />
+      <Separator/>
+      <DrawerItem 
+        label= 'Favoritos'
+        labelStyle={styles.text_entry}
+        
+        onPress={() => navigate('hello')}
+      />
+      <Separator/>
+    <DrawerItem 
+        label= 'Chat'
+        labelStyle={styles.text_entry} 
+        onPress={() => navigate('hello')}
+      />
+    </View>
+  );
+
+  return(
+    <View>
+     <TouchableOpacity 
+      onPress={() => {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setExpanded(!expanded);
+      }}>
+
+      <View style={styles.header}>
+        <View style={styles.picture_placeholder}/>
+        <View style={styles.header_expand_button}>
+          <Text style={styles.text_title}> Nome do Cidadao </Text>
+	        <Ionicons name="chevron-down" size={24} />
+        </View>
+      </View>
+    </TouchableOpacity>
+
+    { expanded && body }
+    </View>
+
+  );
+
+
+}
+
+
 
 function Atalhos(props: DrawerContentComponentProps){
   const [expanded, setExpanded] = useState(false);
@@ -82,7 +147,15 @@ function Atalhos(props: DrawerContentComponentProps){
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setExpanded(!expanded);
     }}>
-      <Text> Atalhos </Text>
+      <View style={styles.expand_buttons}>
+        <View style={styles.expand_buttons_internal}>
+          <Ionicons name="paw" size={24}/>
+          <Text style={styles.text_title}> Atalhos</Text>
+	      </View>
+        <Ionicons name="chevron-down" size={24} />
+      </View>
+
+     
     </TouchableOpacity>
 
     { expanded && body }
@@ -143,7 +216,13 @@ function Informacoes(props: DrawerContentComponentProps){
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setExpanded(!expanded);
     }}>
-      <Text> Informações </Text>
+      <View style={styles.expand_buttons}>
+        <View style={styles.expand_buttons_internal}>
+          <Ionicons name="information-circle-outline" size={24}/>
+          <Text style={styles.text_title}> Informações</Text>
+	      </View>
+        <Ionicons name="chevron-down" size={24} />
+      </View>
     </TouchableOpacity>
 
     { expanded && body }
@@ -153,7 +232,60 @@ function Informacoes(props: DrawerContentComponentProps){
 
 }
 
+function Configuracoes(props: DrawerContentComponentProps){
+  const [expanded, setExpanded] = useState(false);
+  
+  const navigate = createLocalNavegation(props)
 
+  const body = (
+    <View>
+      <DrawerItem 
+        label= 'Privacidade'
+        labelStyle={styles.text_entry}
+        onPress={() => navigate('hello')}
+      />
+    </View>
+  );
+
+  return(
+    <View>
+     <TouchableOpacity 
+    style = {styles.configuracoes}
+    onPress={() => {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setExpanded(!expanded);
+    }}>
+      <View style={styles.expand_buttons}>
+        <View style={styles.expand_buttons_internal}>
+          <Ionicons name="settings-outline" size={24}/>
+          <Text style={styles.text_title}> Configurações</Text>
+	      </View>
+        <Ionicons name="chevron-down" size={24} />
+      </View>
+
+     
+    </TouchableOpacity>
+
+    { expanded && body }
+    </View>
+
+  );
+
+}
+
+function LogoutButton(){
+
+
+  return (
+  <TouchableOpacity 
+    style = {styles.logout_button}
+    onPress={handleLogout}
+    >
+      <Text> Sair </Text>
+    </TouchableOpacity>
+  );
+
+}
 
 function CustomDrawerContent(props: DrawerContentComponentProps){
 
@@ -161,21 +293,11 @@ function CustomDrawerContent(props: DrawerContentComponentProps){
 
 
     <SafeAreaView  style={styles.drawer} edges={['bottom', 'left', 'right']} >
-      <View style={styles.header}>
-        <View style={styles.picture_placeholder} />
-      </View>
-    
-    <Atalhos{...props}/>
-    <Informacoes{...props}/>
-  <DrawerContentScrollView {...props}>
-      <DrawerItemList {...props} />
-    </DrawerContentScrollView>
-    <TouchableOpacity 
-    style = {styles.logout_button}
-    onPress={handleLogout}
-    >
-      <Text> Sair </Text>
-    </TouchableOpacity>
+      <Header{...props}/>   
+      <Atalhos{...props}/>
+      <Informacoes{...props}/>
+      <Configuracoes{...props}/>
+      <LogoutButton/>  
     
     </SafeAreaView>
   );
@@ -212,15 +334,35 @@ const styles = StyleSheet.create({
   header: {
     height: 172,
     width:304, 
-    backgroundColor: '#88c9bf'
+    backgroundColor: '#88c9bf',
+    paddingTop: 40,        // Protege o topo para a foto
+    paddingBottom: 12,     // Protege a base para o texto/ícone
+    paddingHorizontal: 16, // Protege as laterais (16dp esquerda e direita)
+    
+    // Separa os filhos: joga a foto para cima e a View de texto para baixo
+    justifyContent: 'space-between',
   },
   picture_placeholder: {
     width: 64,
     height: 64,
     borderRadius: 32,
     backgroundColor: '#fee29b',
-    top:40,
-    left:16,
+     },
+  header_expand_button:{
+   flexDirection: 'row',
+   justifyContent: 'space-between'
+  },
+ expand_buttons: {
+   flexDirection: 'row',
+   alignItems: 'center',
+   justifyContent: 'space-between',
+   paddingHorizontal:16,
+   
+  },
+  expand_buttons_internal: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
   },
   logout_button: {
     height: 48,
@@ -242,11 +384,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
 
   },
+  configuracoes:{
+    height: 48,
+    width:304,
+    backgroundColor: '#e6e7e8',
+    justifyContent: 'center',
+
+  },
   separator: {
     width: 256,
     height: 1,
     backgroundColor: '#e6e7e8', 
     marginLeft: 48,
+  },
+  text_title:{
+    fontFamily: 'Roboto-Medium',
+    fontSize: 14,
+    color: '#434343',
   },
   text_entry:{
     fontFamily: 'Roboto-Regular', 
