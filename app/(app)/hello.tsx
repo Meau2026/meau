@@ -1,6 +1,11 @@
 import React, {useState, useEffect} from 'react';
-import { StyleSheet, Text, View, Button, FlatList, ActivityIndicator,Alert, TouchableOpacity, TextInput} from 'react-native';
-import {db} from '../../firebaseConfig.js';
+import { 
+  StyleSheet, Text, View, Button, FlatList, 
+  ActivityIndicator,Alert, TouchableOpacity, 
+  TextInput} from 'react-native';
+
+
+  import {db} from '../../firebaseConfig.js';
 import { collection , addDoc, getDocs } from 'firebase/firestore';
 
 import { auth } from '@/firebaseConfig'; 
