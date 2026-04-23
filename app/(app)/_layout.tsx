@@ -118,7 +118,7 @@ function Atalhos(props: DrawerContentComponentProps) {
       <DrawerItem
         label='Cadastar um pet'
         labelStyle={styles.text_entry}
-        onPress={() => navigate('hello')}
+        onPress={() => navigate('tela_cadastro_animal')}
       />
       <Separator />
       <DrawerItem
