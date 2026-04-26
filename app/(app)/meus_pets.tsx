@@ -1,5 +1,5 @@
 
-import { Alert, LayoutAnimation, StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
+import { Alert, LayoutAnimation, StyleSheet, Text, TouchableOpacity, View, Image, ScrollView } from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -50,13 +50,33 @@ function AnimalEntry({animal} : {animal : Animal} ){
   );
 }
 
+function AnimalList(){
 
+  const animaisTeste: Animal[] = [
+    {id: "0", name: "corvo jubileu", interessados: 7},
+    {id: "1", name: "junin", interessados: 0},
+    {id: "2", name: "Tony Tony", interessados: 2},
+    {id: "3", name: "Helicoptero de combate", interessados: 20},
+  ];
+
+  return (
+    <ScrollView style={{flex:1}} contentContainerStyle={styles.animal_list}>
+    {
+      animaisTeste.map( (animal) => (
+        <AnimalEntry key={animal.id} animal={animal}/>
+      ))
+    }
+    </ScrollView>
+
+  );
+
+
+
+}
 
 export default function MeusPets(){
   
-  const animalTeste : Animal = {id: "1", name: "corvo jubileu", interessados: 0};
-  
-  return (
+ return (
     <SafeAreaView style={styles.container}>
     <Drawer.Screen
       options = {{
@@ -65,12 +85,9 @@ export default function MeusPets(){
       }}
     />
 
-    <AnimalEntry animal={animalTeste}/>
-
-
+    <AnimalList/>
 
     </SafeAreaView>
-
 );
 
 }
@@ -87,12 +104,15 @@ const styles = StyleSheet.create({
   drawer_header: {
     backgroundColor: '#88c9bf',
   },
-
+  animal_list: {
+    gap: 8,
+    
+  },
   pet_frame: {
     width: 344,
     height: 264,
-    borderWidth: 1,           // Espessura da linha
-    borderColor: '#e6e7e8',   // Cor da borda (cinza claro do Meau)
+    borderWidth: 1,           
+    borderColor: '#e6e7e8', 
     borderRadius: 4,
 
 		shadowColor: '#000',
@@ -106,7 +126,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#cfe9e5',
- paddingHorizontal: 8,
+    paddingHorizontal: 8,
     flexDirection: 'row',
   },
   pet_foto: {
