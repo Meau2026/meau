@@ -5,7 +5,8 @@ import { Platform } from 'react-native';
 // import {...} from 'firebase/database';
 import { getFirestore } from 'firebase/firestore';
 // import {...} from 'firebase/functions';
-// import {...} from 'firebase/storage';
+ import { getStorage } from 'firebase/storage';
+
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -27,6 +28,8 @@ const app = initializeApp(firebaseConfig); //conexao com o firebase
 
 // inicializacao dos servicos 
 export const db = getFirestore(app);
+
+export const storage = getStorage();
 
 // usamos async storage pra manter user logado apos fechar o app
 let auth;
