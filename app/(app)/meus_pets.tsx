@@ -1,22 +1,27 @@
 
-import { Alert, LayoutAnimation, StyleSheet, Text, TouchableOpacity, View, Image, ScrollView } from 'react-native';
+import { Alert, LayoutAnimation, StyleSheet, Text, TouchableOpacity, View, Image,FlatList , ScrollView} from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Ionicons } from '@expo/vector-icons';
-
+import { useAuth } from '@/contexts/AuthContext';
 import React, { useState, useEffect } from 'react';
-import { storage } from '@/firebaseConfig'; 
+import { storage, db } from '@/firebaseConfig'; 
 import { ref, getDownloadURL } from 'firebase/storage';
+import { getDoc, doc } from 'firebase/firestore';
 import { Drawer } from 'expo-router/drawer'; 
 
 
 interface Animal {
-  id: string;
-  name: string;
-  url_foto: string;
+  nome: string;
+  fotos: string[];
   interessados: number;
 }
+
+interface PageState {
+  byId: { [key: string] : Animal};
+  ids: string[];
+};
 
 function AnimalEntry({animal} : {animal : Animal} ){
   
@@ -24,7 +29,7 @@ function AnimalEntry({animal} : {animal : Animal} ){
   
   useEffect(() => {
     
-    getDownloadURL(ref(storage, 'animais/teste.jpg'))
+    getDownloadURL(ref(storage, animal.fotos[0]))
       .then((url) => setUrl(url))
       .catch((e) => console.error(e));
   }, []); 
@@ -33,7 +38,7 @@ function AnimalEntry({animal} : {animal : Animal} ){
   <View style={styles.pet_frame}>
     <View style={styles.pet_header}>
       <Text style={styles.pet_nome}> 
-        {animal.name} 
+        {animal.nome} 
       </Text> 
 
       <Ionicons name="information-circle" size={24} color='#434343' />
@@ -50,20 +55,63 @@ function AnimalEntry({animal} : {animal : Animal} ){
   );
 }
 
-function AnimalList(){
+function AnimalList( {user} ){
+  
+  const [pets, setPets] = useState<PageState>({ byId: {}, ids: []});
 
-  const animaisTeste: Animal[] = [
-    {id: "0", name: "corvo jubileu", interessados: 7},
-    {id: "1", name: "junin", interessados: 0},
-    {id: "2", name: "Tony Tony", interessados: 2},
-    {id: "3", name: "Helicoptero de combate", interessados: 20},
-  ];
+  useEffect( () => {
+    
+
+    const fetchAnimais = async () => {
+      try{
+
+        const userDocRef = doc(db, "users", user.uid)
+        const userDoc = await getDoc(userDocRef);
+        
+        if(userDoc.exists()){
+          const userAnimals = userDoc.data().animais;
+
+       
+          let state : PageState = {byId:{}, ids: []};
+          
+          for (const animalUid of userAnimals){
+
+            const animalRef = doc(db, "animais", animalUid);
+            const animalDoc = await getDoc(animalRef);
+
+            if (animalDoc.exists()){
+              state.byId[animalDoc.id] = {
+                nome: animalDoc.data().nome, 
+                fotos: animalDoc.data().fotos, 
+                interessados: 0};
+
+              state.ids.push(animalDoc.id);
+            }
+            
+          }
+           setPets(state);
+
+          }
+         
+        }
+      catch(e){
+        console.error(e)
+      }
+
+   
+
+    }
+
+    fetchAnimais()
+    
+    }, [user.uid]);
 
   return (
     <ScrollView style={{flex:1}} contentContainerStyle={styles.animal_list}>
     {
-      animaisTeste.map( (animal) => (
-        <AnimalEntry key={animal.id} animal={animal}/>
+      pets.ids.map( (id) => (
+
+        <AnimalEntry key={id} animal={pets.byId[id]}/>
       ))
     }
     </ScrollView>
@@ -74,7 +122,11 @@ function AnimalList(){
 
 }
 
+
 export default function MeusPets(){
+  const { user } = useAuth();
+  
+
   
  return (
     <SafeAreaView style={styles.container}>
@@ -85,7 +137,7 @@ export default function MeusPets(){
       }}
     />
 
-    <AnimalList/>
+    <AnimalList user={user} />
 
     </SafeAreaView>
 );

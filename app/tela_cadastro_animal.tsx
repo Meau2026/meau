@@ -1,11 +1,20 @@
+import { useAuth } from '@/contexts/AuthContext';
+import { db, storage } from '@/firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { addDoc, arrayUnion, collection, doc, setDoc } from 'firebase/firestore';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function CadastroAnimal() {
-	const [selectedButton, setSelectedButton] = useState<string | null>(null);
+	const { user } = useAuth();
+	const router = useRouter();
+	const [nome, setNome] = useState('');
+	const [fotos, setFotos] = useState<string[]>([]);
 	const [selectedSpecies, setSelectedSpecies] = useState<string | null>(null);
 	const [selectedGender, setSelectedGender] = useState<string | null>(null);
 	const [selectedSize, setSelectedSize] = useState<string | null>(null);
@@ -14,6 +23,52 @@ export default function CadastroAnimal() {
 	const [selectedHealth, setSelectedHealth] = useState<string[]>([]);
 	const [selectedAdoptionRequirements, setSelectedAdoptionRequirements] = useState<string[]>([]);
 	const [selectedAdoptionMonths, setSelectedAdoptionMonths] = useState<string[]>([]);
+	const [doencas, setDoencas] = useState('');
+	const [historia, setHistoria] = useState('');
+
+	const handleAddPhoto = async () => {
+		const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
+		const { status: mediaStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+		if (cameraStatus !== 'granted' || mediaStatus !== 'granted') {
+			Alert.alert('Permissões necessárias', 'Precisamos de permissões para acessar câmera e galeria.');
+			return;
+		}
+
+		Alert.alert(
+			'Selecionar Imagem',
+			'Escolha uma opção',
+			[
+				{ text: 'Cancelar', style: 'cancel' },
+				{ text: 'Tirar Foto', onPress: pickFromCamera },
+				{ text: 'Escolher da Galeria', onPress: pickFromGallery },
+			]
+		);
+	};
+
+	const pickFromCamera = async () => {
+		const result = await ImagePicker.launchCameraAsync({
+			mediaTypes: ImagePicker.MediaTypeOptions.Images,
+			allowsEditing: true,
+			quality: 1,
+		});
+
+		if (!result.canceled) {
+			setFotos(prev => [...prev, result.assets[0].uri]);
+		}
+	};
+
+	const pickFromGallery = async () => {
+		const result = await ImagePicker.launchImageLibraryAsync({
+			mediaTypes: ImagePicker.MediaTypeOptions.Images,
+			allowsEditing: true,
+			quality: 1,
+		});
+
+		if (!result.canceled) {
+			setFotos(prev => [...prev, result.assets[0].uri]);
+		}
+	};
 
 	const toggleTemperament = (temperament: string) => {
 		setSelectedTemperament(prev =>
@@ -47,6 +102,54 @@ export default function CadastroAnimal() {
 		);
 	};
 
+	const handleAdoptButtonPress = async () => {
+		if (!user) {
+			Alert.alert('Atenção', 'Você precisa estar logado para cadastrar um animal.');
+			return;
+		}
+
+		try {
+			// Upload das fotos para o Storage
+			const uploadedUrls: string[] = [];
+			for (let i = 0; i < fotos.length; i++) {
+				const uri = fotos[i];
+				const response = await fetch(uri);
+				const blob = await response.blob();
+				const storageRef = ref(storage, `animais/${user.uid}/${Date.now()}_${i}.jpg`);
+				await uploadBytes(storageRef, blob);
+				const downloadUrl = await getDownloadURL(storageRef);
+				uploadedUrls.push(downloadUrl);
+			}
+
+			// Salvar no Firestore
+			const animalRef = await addDoc(collection(db, 'animais'), {
+				nome,
+				fotos: uploadedUrls,
+				especie: selectedSpecies,
+				sexo: selectedGender,
+				porte: selectedSize,
+				idade: selectedAge,
+				temperamento: selectedTemperament,
+				saude: selectedHealth,
+				requisitosAdocao: selectedAdoptionRequirements,
+				mesesAdocao: selectedAdoptionMonths,
+				doencas,
+				historia,
+				usuarioId: user.uid,
+			});
+
+			await setDoc(doc(db, 'users', user.uid), {
+				animais: arrayUnion(animalRef.id),
+			}, { merge: true });
+
+			Alert.alert('Sucesso', 'Animal cadastrado e vinculado ao seu usuário.');
+			router.replace('/');
+		} catch (error) {
+			console.log(error);
+			Alert.alert('Erro', 'Não foi possível cadastrar o animal.');
+		}
+	};
+
 	return (
 		<SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
 			<StatusBar style="dark" backgroundColor="#88C9BF" translucent={false} />
@@ -58,37 +161,24 @@ export default function CadastroAnimal() {
 
 			<ScrollView contentContainerStyle={styles.scrollContent}>
 				<Text style={styles.infoText}>Tenho interesse em cadastrar um animal para:</Text>
-				<View style={styles.button2Container}>
-					<TouchableOpacity
-						style={[styles.button2, selectedButton === 'ADOÇÃO' && styles.selectedButton]}
-						onPress={() => setSelectedButton('ADOÇÃO')}
-					>
-						<Text style={styles.buttonText}>ADOÇÃO</Text>
-					</TouchableOpacity>
-					<TouchableOpacity
-						style={[styles.button2, selectedButton === 'APADRINHAR' && styles.selectedButton]}
-						onPress={() => setSelectedButton('APADRINHAR')}
-					>
-						<Text style={styles.buttonText}>APADRINHAR</Text>
-					</TouchableOpacity>
-					<TouchableOpacity
-						style={[styles.button2, selectedButton === 'AJUDA' && styles.selectedButton]}
-						onPress={() => setSelectedButton('AJUDA')}
-					>
-						<Text style={styles.buttonText}>AJUDA</Text>
-					</TouchableOpacity>
-				</View>
 
 				<Text style={styles.sectionText}>Adoção</Text>
 
 				<Text style={styles.sectionTitle}>NOME DO ANIMAL</Text>
-				<TextInput style={styles.input} placeholder="Nome do animal" />
+				<TextInput style={styles.input} placeholder="Nome do animal" value={nome} onChangeText={setNome} />
 
 				<Text style={styles.sectionTitle}>FOTOS DO ANIMAL</Text>
-				<TouchableOpacity style={styles.photoContainer}>
+				<TouchableOpacity style={styles.photoContainer} onPress={handleAddPhoto}>
 					<Ionicons name="add-circle-outline" size={24} color="#757575" />
 					<Text style={styles.photoText}>adicionar fotos</Text>
 				</TouchableOpacity>
+				{fotos.length > 0 && (
+					<View style={styles.photosContainer}>
+						{fotos.map((uri, index) => (
+							<Image key={index} source={{ uri }} style={styles.photo} />
+						))}
+					</View>
+				)}
 
 				<Text style={styles.sectionTitle}>ESPÉCIE</Text>
 				<View style={styles.speciesContainer}>
@@ -232,7 +322,7 @@ export default function CadastroAnimal() {
 						</View>
 						<Text style={styles.radioText}>Doente</Text>
 					</TouchableOpacity>
-					<TextInput style={styles.input} placeholder="Doenças do animal" />
+					<TextInput style={styles.input} placeholder="Doenças do animal" value={doencas} onChangeText={setDoencas} />
 				</View>
 
 				<Text style={styles.sectionTitle}>EXIGÊNCIAS PARA ADOÇÃO</Text>
@@ -308,9 +398,9 @@ export default function CadastroAnimal() {
 				</View>
 
 				<Text style={styles.sectionTitle}>SOBRE O ANIMAL</Text>
-				<TextInput style={styles.input} placeholder="Compartilhe a história do animal" />
+				<TextInput style={styles.input} placeholder="Compartilhe a história do animal" value={historia} onChangeText={setHistoria} />
 
-				<TouchableOpacity style={styles.button}>
+				<TouchableOpacity style={styles.button} onPress={handleAdoptButtonPress}>
 					<Text style={styles.buttonText}>COLOCAR PARA ADOÇÃO</Text>
 				</TouchableOpacity>
 			</ScrollView>
@@ -348,6 +438,17 @@ const styles = StyleSheet.create({
 		elevation: 2
 	},
 	photoText: { color: '#757575', fontSize: 14 },
+	photosContainer: {
+		flexDirection: 'row',
+		flexWrap: 'wrap',
+		marginBottom: 32,
+	},
+	photo: {
+		width: 100,
+		height: 100,
+		margin: 4,
+		borderRadius: 8,
+	},
 	button: {
 		backgroundColor: '#88C9BF', width: 232, height: 48,
 		justifyContent: 'center', alignItems: 'center', borderRadius: 2,
