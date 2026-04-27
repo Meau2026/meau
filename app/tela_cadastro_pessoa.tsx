@@ -1,10 +1,126 @@
+import { db, storage } from '@/firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { addDoc, collection } from 'firebase/firestore';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import React, { useState } from 'react';
+import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function CadastroPessoal() {
+	// Estados para os campos do formulário
+	const router = useRouter();
+	const [nome, setNome] = useState<string>('');
+	const [idade, setIdade] = useState<string>('');
+	const [email, setEmail] = useState<string>('');
+	const [estado, setEstado] = useState<string>('');
+	const [cidade, setCidade] = useState<string>('');
+	const [endereco, setEndereco] = useState<string>('');
+	const [telefone, setTelefone] = useState<string>('');
+	const [username, setUsername] = useState<string>('');
+	const [senha, setSenha] = useState<string>('');
+	const [confirmaSenha, setConfirmaSenha] = useState<string>('');
+	const [image, setImage] = useState<string | null>(null);
+	const [loading, setLoading] = useState(false);
+
+	// Função para selecionar imagem da galeria
+
+	const handleAddPhoto = async () => {
+		const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
+		const { status: mediaStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+		if (cameraStatus !== 'granted' || mediaStatus !== 'granted') {
+			Alert.alert('Permissões necessárias', 'Precisamos de permissões para acessar câmera e galeria.');
+			return;
+		}
+
+		Alert.alert(
+			'Selecionar Imagem',
+			'Escolha uma opção',
+			[
+				{ text: 'Cancelar', style: 'cancel' },
+				{ text: 'Tirar Foto', onPress: pickFromCamera },
+				{ text: 'Escolher da Galeria', onPress: pickFromGallery },
+			]
+		);
+	};
+
+	const pickFromCamera = async () => {
+		const result = await ImagePicker.launchCameraAsync({
+			mediaTypes: ImagePicker.MediaTypeOptions.Images,
+			allowsEditing: true,
+			quality: 1,
+		});
+
+		if (!result.canceled) {
+			setImage(result.assets[0].uri);
+		}
+	};
+
+	const pickFromGallery = async () => {
+		let result = await ImagePicker.launchImageLibraryAsync({
+			mediaTypes: ImagePicker.MediaTypeOptions.Images,
+			allowsEditing: true,
+			quality: 1,
+		});
+
+		if (!result.canceled) {
+			setImage(result.assets[0].uri);
+		}
+	};
+
+	// Função para salvar no Firestore
+	const handleCadastro = async () => {
+		if (!nome || !email || !senha) {
+			Alert.alert("Erro", "Preencha os campos obrigatórios (Nome, E-mail e Senha).");
+			return;
+		}
+
+		if (senha !== confirmaSenha) {
+			Alert.alert("Erro", "As senhas não coincidem.");
+			return;
+		}
+
+		setLoading(true);
+		try {
+			let imageUrl = "";
+
+			// 1. Upload da imagem para o Firebase Storage (se houver)
+			if (image) {
+				const response = await fetch(image);
+				const blob = await response.blob();
+				const storageRef = ref(storage, `perfil/${Date.now()}`);
+				await uploadBytes(storageRef, blob);
+				imageUrl = await getDownloadURL(storageRef);
+			}
+
+			// 2. Salvar dados no Firestore
+			await addDoc(collection(db, "users"), {
+				nome,
+				idade,
+				email,
+				estado,
+				cidade,
+				endereco,
+				telefone,
+				username,
+				fotoUrl: imageUrl,
+				createdAt: new Date(),
+			});
+
+			Alert.alert("Sucesso", "Cadastro realizado com sucesso!");
+			router.replace('/');
+			// Limpar campos ou navegar para outra tela aqui
+		} catch (error) {
+			console.error(error);
+			Alert.alert("Erro", "Não foi possível realizar o cadastro.");
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	return (
 		<SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
 			<StatusBar style="dark" backgroundColor="#88C9BF" translucent={false} />
@@ -22,27 +138,33 @@ export default function CadastroPessoal() {
 				</View>
 
 				<Text style={styles.sectionTitle}>INFORMAÇÕES PESSOAIS</Text>
-				<TextInput style={styles.input} placeholder="Nome completo" />
-				<TextInput style={styles.input} placeholder="Idade" keyboardType="numeric" />
-				<TextInput style={styles.input} placeholder="E-mail" keyboardType="email-address" />
-				<TextInput style={styles.input} placeholder="Estado" />
-				<TextInput style={styles.input} placeholder="Cidade" />
-				<TextInput style={styles.input} placeholder="Endereço" />
-				<TextInput style={styles.input} placeholder="Telefone" keyboardType="phone-pad" />
+				<TextInput style={styles.input} placeholder="Nome completo" value={nome} onChangeText={setNome} />
+				<TextInput style={styles.input} placeholder="Idade" keyboardType="numeric" value={idade} onChangeText={setIdade} />
+				<TextInput style={styles.input} placeholder="E-mail" keyboardType="email-address" value={email} onChangeText={setEmail} />
+				<TextInput style={styles.input} placeholder="Estado" value={estado} onChangeText={setEstado} />
+				<TextInput style={styles.input} placeholder="Cidade" value={cidade} onChangeText={setCidade} />
+				<TextInput style={styles.input} placeholder="Endereço" value={endereco} onChangeText={setEndereco} />
+				<TextInput style={styles.input} placeholder="Telefone" keyboardType="phone-pad" value={telefone} onChangeText={setTelefone} />
 
 				<Text style={styles.sectionTitle}>INFORMAÇÕES DE PERFIL</Text>
-				<TextInput style={styles.input} placeholder="Nome de usuário" />
-				<TextInput style={styles.input} placeholder="Senha" secureTextEntry={true} />
-				<TextInput style={styles.input} placeholder="Confirmação de senha" secureTextEntry={true} />
+				<TextInput style={styles.input} placeholder="Nome de usuário" value={username} onChangeText={setUsername} />
+				<TextInput style={styles.input} placeholder="Senha" secureTextEntry value={senha} onChangeText={setSenha} />
+				<TextInput style={styles.input} placeholder="Confirmação de senha" secureTextEntry value={confirmaSenha} onChangeText={setConfirmaSenha} />
 
 				<Text style={styles.sectionTitle}>FOTO DE PERFIL</Text>
-				<TouchableOpacity style={styles.photoContainer}>
-					<Ionicons name="add-circle-outline" size={24} color="#757575" />
-					<Text style={styles.photoText}>adicionar foto</Text>
+				<TouchableOpacity style={styles.photoContainer} onPress={handleAddPhoto}>
+					{image ? (
+						<Image source={{ uri: image }} style={{ width: '100%', height: '100%' }} />
+					) : (
+						<>
+							<Ionicons name="add-circle-outline" size={24} color="#757575" />
+							<Text style={styles.photoText}>adicionar foto</Text>
+						</>
+					)}
 				</TouchableOpacity>
 
-				<TouchableOpacity style={styles.button}>
-					<Text style={styles.buttonText}>FAZER CADASTRO</Text>
+				<TouchableOpacity style={styles.button} onPress={handleCadastro} disabled={loading}>
+					{loading ? <ActivityIndicator color="#434343" /> : <Text style={styles.buttonText}>FAZER CADASTRO</Text>}
 				</TouchableOpacity>
 			</ScrollView>
 		</SafeAreaView>
@@ -82,3 +204,5 @@ const styles = StyleSheet.create({
 	},
 	buttonText: { color: '#434343', fontWeight: 'bold' }
 });
+
+// ... Estilos permanecem os mesmos
