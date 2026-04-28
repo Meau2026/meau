@@ -10,8 +10,19 @@ import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+
+
+import { Drawer } from 'expo-router/drawer';
+import { useNavigation } from 'expo-router';
+import { DrawerActions } from '@react-navigation/native';
+
+
+
 export default function CadastroPessoal() {
-	const auth = '';
+
+  const navigation = useNavigation();  
+	
+  const auth = '';
 	const router = useRouter();
 	const [nome, setNome] = useState<string>('');
 	const [idade, setIdade] = useState<string>('');
@@ -85,6 +96,7 @@ export default function CadastroPessoal() {
 			const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
 			const user = userCredential.user;
 
+
 			let imageUrl = "";
 			if (image) {
 				const response = await fetch(image);
@@ -123,11 +135,22 @@ export default function CadastroPessoal() {
 
 	return (
 		<SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+
+    
+      <Drawer.Screen
+          options = {{
+           headerShown: false
+            }}
+          />
+
 			<StatusBar style="dark" backgroundColor="#88C9BF" translucent={false} />
 
 			<View style={styles.header}>
-				<TouchableOpacity><Ionicons name="menu" size={24} color="#575757" /></TouchableOpacity>
-				<Text style={styles.headerText}>Cadastro Pessoal</Text>
+				<TouchableOpacity onPress={() => {navigation.dispatch(DrawerActions.openDrawer());}}>
+          <Ionicons name="menu" size={24} color="#575757" />
+        </TouchableOpacity>
+				
+        <Text style={styles.headerText}>Cadastro Pessoal</Text>
 			</View>
 
 			<ScrollView contentContainerStyle={styles.scrollContent}>

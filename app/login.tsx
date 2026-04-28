@@ -7,6 +7,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
 
+import { Drawer } from 'expo-router/drawer';
+import { useNavigation } from 'expo-router';
+import { DrawerActions } from '@react-navigation/native';
+
+
+
+
 import { auth } from '../firebaseConfig'
 
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth'
@@ -19,12 +26,13 @@ export default function FireBaseTest() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const navigation = useNavigation();  
 
 
   const singIn = async () => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password)
-      Alert.alert(`login com UID: ${userCredential.user.uid}`)
+      navigation.goBack(); 
     } catch (e) {
       console.log(e)
       Alert.alert(`deu ruim: ${e.message}`)
@@ -44,15 +52,23 @@ export default function FireBaseTest() {
 
 	return(
 		<SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-			<StatusBar
+			
+    <Drawer.Screen
+          options = {{
+           headerShown: false
+            }}
+          />
+
+
+    <StatusBar
 				style="dark"
 				backgroundColor="#87C9BF"
 				translucent={false}
 			/>
 			<View style={styles.header}>
 
-				<TouchableOpacity>
-					<Ionicons name="menu" size={32} />
+				<TouchableOpacity  onPress={() => {navigation.dispatch(DrawerActions.openDrawer());}}>
+		<Ionicons name="menu" size={32} />
 				</TouchableOpacity>
 
 				<Text style={styles.header_text}>Login</Text>
@@ -83,6 +99,11 @@ export default function FireBaseTest() {
 					<Text>ENTRAR</Text>
 				</TouchableOpacity>
 
+		  <TouchableOpacity style={[styles.button, styles.button_cadastro]}
+          onPress={() => {navigation.navigate('cadastrar_usuario')}}
+        >
+					<Text>CRIAR CONTA </Text>
+				</TouchableOpacity>
 
 				<TouchableOpacity style={[styles.button, styles.button_facebook]}>
 					<FontAwesome name="facebook-square" size={24} color="white" />
@@ -156,9 +177,12 @@ const styles = StyleSheet.create({
 	},
 	button_entrar: {
 		backgroundColor: '#87C9BF',
-		marginBottom: 70,
 		marginTop: 50,
 	},
+	button_cadastro: {
+		backgroundColor: '#87C9BF',
+	},
+
 	button_facebook: {
 		backgroundColor: '#1976D2',
 	},
