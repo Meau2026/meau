@@ -10,7 +10,16 @@ import React, { useState } from 'react';
 import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+
+
+import { Drawer } from 'expo-router/drawer';
+import { useNavigation } from 'expo-router';
+import { DrawerActions } from '@react-navigation/native';
+
 export default function CadastroAnimal() {
+
+  const navigation = useNavigation();  
+
 	const { user } = useAuth();
 	const router = useRouter();
 	const [nome, setNome] = useState('');
@@ -152,10 +161,22 @@ export default function CadastroAnimal() {
 
 	return (
 		<SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+
+  <Drawer.Screen
+          options = {{
+           headerShown: false
+            }}
+          />
+
+
+
+
 			<StatusBar style="dark" backgroundColor="#88C9BF" translucent={false} />
 
 			<View style={styles.header}>
-				<TouchableOpacity><Ionicons name="arrow-back" size={24} color="#575757" /></TouchableOpacity>
+				<TouchableOpacity onPress={() => {navigation.goBack();}}>
+          <Ionicons name="arrow-back" size={24} color="#575757" />
+        </TouchableOpacity>
 				<Text style={styles.headerText}>Cadastro Animal</Text>
 			</View>
 
