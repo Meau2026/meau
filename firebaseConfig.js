@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { Platform } from 'react-native';
 // Optionally import the services that you want to use
- import { initializeAuth, browserLocalPersistence, getReactNativePersistence} from 'firebase/auth';
+import { browserLocalPersistence, getReactNativePersistence, initializeAuth } from 'firebase/auth';
 // import {...} from 'firebase/database';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from "firebase/storage";
@@ -47,3 +47,4 @@ if (Platform.OS === 'web') {
 }
 
 export { auth };
+

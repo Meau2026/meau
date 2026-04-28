@@ -1,16 +1,16 @@
-import { db, storage } from '@/firebaseConfig';
+import { auth, db, storage } from '@/firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { addDoc, collection } from 'firebase/firestore';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function CadastroPessoal() {
-	// Estados para os campos do formulário
 	const router = useRouter();
 	const [nome, setNome] = useState<string>('');
 	const [idade, setIdade] = useState<string>('');
@@ -25,7 +25,6 @@ export default function CadastroPessoal() {
 	const [image, setImage] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 
-	// Função para selecionar imagem da galeria
 
 	const handleAddPhoto = async () => {
 		const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
@@ -71,7 +70,6 @@ export default function CadastroPessoal() {
 		}
 	};
 
-	// Função para salvar no Firestore
 	const handleCadastro = async () => {
 		if (!nome || !email || !senha) {
 			Alert.alert("Erro", "Preencha os campos obrigatórios (Nome, E-mail e Senha).");
@@ -85,9 +83,10 @@ export default function CadastroPessoal() {
 
 		setLoading(true);
 		try {
-			let imageUrl = "";
+			const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
+			const user = userCredential.user;
 
-			// 1. Upload da imagem para o Firebase Storage (se houver)
+			let imageUrl = "";
 			if (image) {
 				const response = await fetch(image);
 				const blob = await response.blob();
@@ -96,8 +95,8 @@ export default function CadastroPessoal() {
 				imageUrl = await getDownloadURL(storageRef);
 			}
 
-			// 2. Salvar dados no Firestore
-			await addDoc(collection(db, "users"), {
+			await setDoc(doc(db, "users", user.uid), {
+				uid: user.uid,
 				nome,
 				idade,
 				email,
@@ -112,10 +111,12 @@ export default function CadastroPessoal() {
 
 			Alert.alert("Sucesso", "Cadastro realizado com sucesso!");
 			router.replace('/');
-			// Limpar campos ou navegar para outra tela aqui
-		} catch (error) {
+		} catch (error: any) {
 			console.error(error);
-			Alert.alert("Erro", "Não foi possível realizar o cadastro.");
+			let message = "Não foi possível realizar o cadastro.";
+			if (error.code === 'auth/email-already-in-use') message = "Este e-mail já está em uso.";
+			if (error.code === 'auth/weak-password') message = "A senha deve ter pelo menos 6 caracteres.";
+			Alert.alert("Erro", message);
 		} finally {
 			setLoading(false);
 		}
