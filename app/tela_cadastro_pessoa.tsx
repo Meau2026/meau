@@ -1,4 +1,4 @@
-import { auth, db, storage } from '@/firebaseConfig';
+import { db, storage } from '@/firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
@@ -11,6 +11,7 @@ import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TextInpu
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function CadastroPessoal() {
+	const auth = '';
 	const router = useRouter();
 	const [nome, setNome] = useState<string>('');
 	const [idade, setIdade] = useState<string>('');
@@ -48,24 +49,22 @@ export default function CadastroPessoal() {
 
 	const pickFromCamera = async () => {
 		const result = await ImagePicker.launchCameraAsync({
-			mediaTypes: ImagePicker.MediaTypeOptions.Images,
 			allowsEditing: true,
 			quality: 1,
 		});
 
-		if (!result.canceled) {
+		if (!result.canceled && result.assets && result.assets.length > 0) {
 			setImage(result.assets[0].uri);
 		}
 	};
 
 	const pickFromGallery = async () => {
 		let result = await ImagePicker.launchImageLibraryAsync({
-			mediaTypes: ImagePicker.MediaTypeOptions.Images,
 			allowsEditing: true,
 			quality: 1,
 		});
 
-		if (!result.canceled) {
+		if (!result.canceled && result.assets && result.assets.length > 0) {
 			setImage(result.assets[0].uri);
 		}
 	};
@@ -205,5 +204,3 @@ const styles = StyleSheet.create({
 	},
 	buttonText: { color: '#434343', fontWeight: 'bold' }
 });
-
-// ... Estilos permanecem os mesmos
