@@ -10,13 +10,19 @@ import { storage, db } from '@/firebaseConfig';
 import { ref, getDownloadURL } from 'firebase/storage';
 import { getDoc, doc, getDocs, collection } from 'firebase/firestore';
 import { Drawer } from 'expo-router/drawer'; 
-
+import { StatusBar } from 'expo-status-bar';
 
 interface Animal {
+  id: string;
   nome: string;
+  porte: string;
+  idade: string;
+  sexo: string;
   fotos: string[];
-  interessados: number;
 }
+
+
+
 
 interface PageState {
   byId: { [key: string] : Animal};
@@ -35,28 +41,41 @@ function AnimalEntry({animal} : {animal : Animal} ){
   }, []); 
 
   return(
+
   <View style={styles.pet_frame}>
     <View style={styles.pet_header}>
       <Text style={styles.pet_nome}> 
         {animal.nome} 
       </Text> 
 
-      <Ionicons name="information-circle" size={24} color='#434343' />
+      <Ionicons name="heart-outline" size={24} color='#434343' />
 
     </View>
+  <TouchableOpacity>
     <Image
       source={{ uri: url }}
       style={styles.pet_foto}
     />
+
+  </TouchableOpacity>
     <View style={{justifyContent: 'center', alignItems: 'center', flex: 1}}>
-      <Text style={styles.pet_interessados}> {animal.interessados} </Text>
+      <View style={{width: '80%', flexDirection:'row',justifyContent: 'space-between', alignItems: 'center'}}>
+        <Text style={styles.pet_info_text}> {animal.sexo} </Text>
+        <Text style={styles.pet_info_text}>{animal.idade} </Text>
+        <Text style={styles.pet_info_text}>{animal.porte} </Text>
+      </View>
+      <View>
+        <Text style={styles.pet_info_text}> LOCAL PLACEHOLDER </Text>
+      </View>
     </View>
   </View>
+
   );
 }
 
-function AnimalList( {user} ){
-  
+function AnimalList( ){
+    const { user } = useAuth();
+
   const [pets, setPets] = useState<PageState>({ byId: {}, ids: []});
 
   useEffect( () => {
@@ -70,11 +89,15 @@ function AnimalList( {user} ){
         let state : PageState = {byId:{}, ids: []};
 
         animais.forEach((animalDoc) => {
-          if (!user || animalDoc.data().usuarioId != user.uid){
+          if (animalDoc.data().usuarioId !== user?.uid){
                 state.byId[animalDoc.id] = {
+                id: animalDoc.id,
                 nome: animalDoc.data().nome, 
+                porte: animalDoc.data().porte, 
+                idade: animalDoc.data().idade, 
+                sexo: animalDoc.data().sexo, 
                 fotos: animalDoc.data().fotos, 
-                interessados: 0};
+               };
 
               state.ids.push(animalDoc.id);
 
@@ -113,8 +136,7 @@ function AnimalList( {user} ){
 }
 
 
-export default function MeusPets(){
-  const { user } = useAuth();
+export default function Adotar(){
   
 
   
@@ -123,12 +145,27 @@ export default function MeusPets(){
     <SafeAreaView style={styles.container}>
     <Drawer.Screen
       options = {{
-        headerTitle: "meus pets",
-        headerStyle: styles.drawer_header
+        headerTintColor: '#434343',
+        headerTitle: "adotar",
+        headerTitleStyle :{
+          color: '#434343'
+        },
+        headerStyle: styles.drawer_header,
+        headerRight: () => (
+        <TouchableOpacity style={{marginRight:12}}>
+          <Ionicons name="search-outline" size={24} color='#434343' />
+        </TouchableOpacity>
+        ),
       }}
     />
+		<StatusBar
+				style="dark"
+				backgroundColor="#fee29b"
+				translucent={false}
+			/>
 
-      <AnimalList user={user} />
+
+      <AnimalList/>
 
     </SafeAreaView>
    
@@ -146,7 +183,7 @@ const styles = StyleSheet.create({
 
   },
   drawer_header: {
-    backgroundColor: '#88c9bf',
+    backgroundColor: '#ffd358',
   },
   animal_list: {
     gap: 8,
@@ -169,7 +206,7 @@ const styles = StyleSheet.create({
     height: 32,
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#cfe9e5',
+    backgroundColor: '#fee29b',
     paddingHorizontal: 8,
     flexDirection: 'row',
   },
@@ -188,6 +225,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto-Regular',
     fontSize: 12,
     color: '#434343',
+  },
+  pet_info_text: {
+    textTransform: 'uppercase',
+    fontFamily: 'Roboto-Regular',
+    fontSize: 12,
+    color: '#434343'
   },
 
 
