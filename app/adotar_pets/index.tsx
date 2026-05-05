@@ -11,6 +11,8 @@ import { StatusBar } from 'expo-status-bar';
 import { collection, getDocs } from 'firebase/firestore';
 import { getDownloadURL, ref } from 'firebase/storage';
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'expo-router';
+
 
 interface Animal {
   id: string;
@@ -32,7 +34,7 @@ interface PageState {
 function AnimalEntry({ animal }: { animal: Animal }) {
 
   const [url, setUrl] = useState<string | null>(null);
-
+  const router = useRouter();
   useEffect(() => {
 
     getDownloadURL(ref(storage, animal.fotos[0]))
@@ -51,9 +53,13 @@ function AnimalEntry({ animal }: { animal: Animal }) {
         <Ionicons name="heart-outline" size={24} color='#434343' />
 
       </View>
-      <TouchableOpacity>
+      <TouchableOpacity onPress={()=>{
+      router.push(`/adotar_pets/${animal.id}`);
+
+    }}>
+
         <Image
-          source={{ uri: url }}
+          source={{ uri: url }} s
           style={styles.pet_foto}
         />
 

@@ -6,8 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
 import React, { useState, useEffect } from 'react';
 import { storage, db } from '@/firebaseConfig'; 
-import { ref, getDownloadURL, deleteObject } from 'firebase/storage';
-import { getDoc, doc, deleteDoc } from 'firebase/firestore';
+import { ref, getDownloadURL,  } from 'firebase/storage';
+import { getDoc, doc,  } from 'firebase/firestore';
 import { Drawer } from 'expo-router/drawer'; 
 
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -42,27 +42,7 @@ function PetInfo({label, info}){
   );
 }
 
-const RemoverPet = async (pet: Animal) => {
 
-  try{
-    const deletePromisses = pet.fotos.map((url) => {
-      const refFoto = ref(storage, url);
-      return deleteObject(refFoto);
-    });
-
-    await Promise.all(deletePromisses);
-
-    const petDoc= doc(db, "animais", pet.id);
-    
-    await deleteDoc(petDoc);
-
-
-  }
-  catch(e){
-    console.error(e)
-  }
-
-}
 
 function Pet( {pet} : {pet: Animal} ){
   const router = useRouter();
@@ -137,15 +117,10 @@ crianças. Tem muito medo de raios e chuva."/>
 
   <View style={styles.buttons_container}>
   <TouchableOpacity style={styles.button}>
-    <Text style={styles.button_text}> VER INTERESSADOS </Text>
+    <Text style={styles.button_text}> PRETENDO ADOTAR </Text>
   </TouchableOpacity>
 
-  <TouchableOpacity style={styles.button} onPress={async () => {
-    await RemoverPet(pet)
-    router.replace('meus_pets/index');
-  }}>
-    <Text style={styles.button_text}> REMOVER PET </Text>
-  </TouchableOpacity>
+
   </View>
 
   </View>
@@ -211,7 +186,7 @@ export default function MeuPet() {
       headerTitle: pet.nome,
       headerStyle: styles.drawer_header,
       headerLeft: () => (
-        <TouchableOpacity style={{marginLeft:12}}  onPress={() => router.replace('/meus_pets')}>
+        <TouchableOpacity style={{marginLeft:12}}  onPress={() => router.replace('/adotar_pets')}>
           <Ionicons name="arrow-back-outline" size={24} color='#434343' />
         </TouchableOpacity>
         ),
@@ -235,7 +210,7 @@ export default function MeuPet() {
 
 const styles = StyleSheet.create({
   drawer_header:{
-    backgroundColor: '#cfe9e5',
+    backgroundColor: '#fee29b',
   },
   container:{
     flex: 1,
@@ -259,7 +234,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     fontFamily: 'Roboto-Regular',
     fontSize: 12,
-    color: '#589b9b'
+    color: '#f7a800'
 
   },
   info_text:{
@@ -284,7 +259,7 @@ const styles = StyleSheet.create({
   button:{
     height: 40,
     width: 148,
-    backgroundColor: '#88c9bf',
+    backgroundColor: '#fdcf58',
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 2,
