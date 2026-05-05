@@ -10,9 +10,10 @@ import { storage, db } from '@/firebaseConfig';
 import { ref, getDownloadURL } from 'firebase/storage';
 import { getDoc, doc } from 'firebase/firestore';
 import { Drawer } from 'expo-router/drawer'; 
-
+import { useRouter } from 'expo-router';
 
 interface Animal {
+  id: string;
   nome: string;
   fotos: string[];
   interessados: number;
@@ -24,7 +25,7 @@ interface PageState {
 };
 
 function AnimalEntry({animal} : {animal : Animal} ){
-  
+  const router = useRouter();
   const [url, setUrl] = useState<string | null>(null);
   
   useEffect(() => {
@@ -44,10 +45,15 @@ function AnimalEntry({animal} : {animal : Animal} ){
       <Ionicons name="information-circle" size={24} color='#434343' />
 
     </View>
+    <TouchableOpacity onPress={()=>{
+      router.push(`/meus_pets/${animal.id}`);
+    }}>
     <Image
       source={{ uri: url }}
       style={styles.pet_foto}
     />
+
+  </TouchableOpacity>
     <View style={{justifyContent: 'center', alignItems: 'center', flex: 1}}>
       <Text style={styles.pet_interessados}> {animal.interessados} NOVOS INTERESSADOS </Text>
     </View>
@@ -81,6 +87,7 @@ function AnimalList( {user} ){
 
             if (animalDoc.exists()){
               state.byId[animalDoc.id] = {
+                id: animalDoc.id,
                 nome: animalDoc.data().nome, 
                 fotos: animalDoc.data().fotos, 
                 interessados: 0};
@@ -134,7 +141,13 @@ export default function MeusPets(){
     <Drawer.Screen
       options = {{
         headerTitle: "meus pets",
-        headerStyle: styles.drawer_header
+        headerStyle: styles.drawer_header,
+       headerRight: () => (
+        <TouchableOpacity style={{marginRight:12}}>
+          <Ionicons name="search-outline" size={24} color='#434343' />
+        </TouchableOpacity>
+        ),
+
       }}
     />
     { user &&

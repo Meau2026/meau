@@ -75,7 +75,7 @@ function Header(props: DrawerContentComponentProps) {
         label='Meus pets'
         labelStyle={styles.text_entry}
 
-        onPress={() => navigate('meus_pets')}
+        onPress={() => navigate('meus_pets/index')}
       />
       <Separator />
       </>
