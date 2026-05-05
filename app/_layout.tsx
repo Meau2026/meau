@@ -143,7 +143,7 @@ function Atalhos(props: DrawerContentComponentProps) {
         label='Adotar um pet'
         labelStyle={styles.text_entry}
 
-        onPress={() => navigate('adotar_pets')}
+        onPress={() => navigate('adotar_pets/index')}
       />
     </View>
   );
