@@ -15,8 +15,18 @@ import { useRouter } from 'expo-router';
 interface Animal {
   id: string;
   nome: string;
+  porte: string;
+  idade: string;
+  sexo: string;
   fotos: string[];
-  interessados: number;
+
+  vacinado: string;
+  vermifugado: string;
+  castrado: string;
+  doencas: string;
+  visivel: boolean;
+  interessados: string[];
+  temperamento: string;
 }
 
 interface PageState {
@@ -46,7 +56,7 @@ function AnimalEntry({animal} : {animal : Animal} ){
 
     </View>
     <TouchableOpacity onPress={()=>{
-      router.push(`/meus_pets/${animal.id}`);
+      router.push({ pathname: `/meus_pets/${animal.id}`, params: {petData: JSON.stringify(animal)} });
     }}>
     <Image
       source={{ uri: url }}
@@ -82,17 +92,27 @@ function AnimalList( {user} ){
           
           for (const animalUid of userAnimals){
 
-            const animalRef = doc(db, "animais", animalUid);
-            const animalDoc = await getDoc(animalRef);
+            const petRef = doc(db, "animais", animalUid);
+            const petDoc = await getDoc(petRef);
 
-            if (animalDoc.exists()){
-              state.byId[animalDoc.id] = {
-                id: animalDoc.id,
-                nome: animalDoc.data().nome, 
-                fotos: animalDoc.data().fotos, 
-                interessados: 0};
+            if (petDoc.exists()){
+              const data = petDoc.data();
+              state.byId[petDoc.id] = {
+                  id: petDoc.id,
+                  nome: data.nome,
+                  porte: data.porte,
+          idade: data.idade,
+          sexo: data.sexo,
+          fotos: data.fotos, 
+          vacinado: 'sim',
+          vermifugado: 'sim',
+          castrado: 'Não',
+          doencas: 'nenhuma',
+          interessados: data.interessados,
+          visivel: data.visivel,
+          temperamento: 'dócil'};
 
-              state.ids.push(animalDoc.id);
+              state.ids.push(petDoc.id);
             }
             
           }
