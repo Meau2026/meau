@@ -1,16 +1,16 @@
 import { Alert, LayoutAnimation, StyleSheet, Text, TouchableOpacity, View, Image,FlatList , ScrollView, ActivityIndicator} from 'react-native';
-
+import { useCallback } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,  } from 'react';
 import { storage, db } from '@/firebaseConfig'; 
 import { ref, getDownloadURL,  } from 'firebase/storage';
 import { getDoc, doc,  } from 'firebase/firestore';
 import { Drawer } from 'expo-router/drawer'; 
 
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 
 interface Animal {
   id: string;
@@ -48,12 +48,11 @@ function Pet( {pet} : {pet: Animal} ){
   const router = useRouter();
   const [url, setUrl] = useState<string | null>(null);
   
-  useEffect(() => {
-    
+  useEffect(() => { 
     getDownloadURL(ref(storage, pet.fotos[0]))
       .then((url) => setUrl(url))
       .catch((e) => console.error(e));
-  }, []); 
+  }, [pet]); 
 
 
   return(
@@ -135,7 +134,8 @@ export default function MeuPet() {
   const [pet, setPet] = useState<Animal>();
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  useEffect( () => {
+  useEffect(() => {
+    setLoading(true);
     const fetchPet = async () => {
     try{
       const petDoc = await getDoc(doc(db, "animais", id));
@@ -169,7 +169,7 @@ export default function MeuPet() {
 
   fetchPet();
 
-  }, []);
+  }, [id]);
 
   if (loading) {
     return(
