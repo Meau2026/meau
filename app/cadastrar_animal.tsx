@@ -18,7 +18,7 @@ import { DrawerActions } from '@react-navigation/native';
 
 export default function CadastroAnimal() {
 
-  const navigation = useNavigation();  
+	const navigation = useNavigation();
 
 	const { user } = useAuth();
 	const router = useRouter();
@@ -165,11 +165,11 @@ export default function CadastroAnimal() {
 	return (
 		<SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
 
-  <Drawer.Screen
-          options = {{
-           headerShown: false
-            }}
-          />
+			<Drawer.Screen
+				options={{
+					headerShown: false
+				}}
+			/>
 
 
 
@@ -177,9 +177,9 @@ export default function CadastroAnimal() {
 			<StatusBar style="dark" backgroundColor="#88C9BF" translucent={false} />
 
 			<View style={styles.header}>
-				<TouchableOpacity onPress={() => {navigation.goBack();}}>
-          <Ionicons name="arrow-back" size={24} color="#575757" />
-        </TouchableOpacity>
+				<TouchableOpacity onPress={() => { navigation.goBack(); }}>
+					<Ionicons name="arrow-back" size={24} color="#575757" />
+				</TouchableOpacity>
 				<Text style={styles.headerText}>Cadastro Animal</Text>
 			</View>
 
