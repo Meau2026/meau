@@ -1,17 +1,16 @@
-import { Alert, LayoutAnimation, StyleSheet, Text, TouchableOpacity, View, Image,FlatList , ScrollView, ActivityIndicator} from 'react-native';
+import { ActivityIndicator, Dimensions, FlatList, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { db, storage } from '@/firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@/contexts/AuthContext';
-import React, { useState, useEffect } from 'react';
-import { storage, db } from '@/firebaseConfig'; 
-import { ref, getDownloadURL,  } from 'firebase/storage';
-import { getDoc, doc,  } from 'firebase/firestore';
-import { Drawer } from 'expo-router/drawer'; 
+import { Drawer } from 'expo-router/drawer';
+import { doc, getDoc, } from 'firebase/firestore';
+import { getDownloadURL, ref, } from 'firebase/storage';
+import React, { useEffect, useState } from 'react';
 
 import { useLocalSearchParams, useRouter } from 'expo-router';
-
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 interface Animal {
   id: string;
   nome: string;
@@ -46,23 +45,55 @@ function PetInfo({label, info}){
 
 function Pet( {pet} : {pet: Animal} ){
   const router = useRouter();
-  const [url, setUrl] = useState<string | null>(null);
+  const [urls, setUrls] = useState<string[]>([]);
+  const [loadingPhotos, setLoadingPhotos] = useState(true);
   
   useEffect(() => {
-    
-    getDownloadURL(ref(storage, pet.fotos[0]))
-      .then((url) => setUrl(url))
-      .catch((e) => console.error(e));
-  }, []); 
+    const fetchAllPhotos = async () => {
+      try {
+        const promises = pet.fotos.map(fotoPath => 
+          getDownloadURL(ref(storage, fotoPath))
+        );
+        
+        // Aguardamos todas as URLs serem resolvidas simultaneamente
+        const resolvedUrls = await Promise.all(promises);
+        setUrls(resolvedUrls);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoadingPhotos(false);
+      }
+    };
+
+    if (pet.fotos && pet.fotos.length > 0) {
+      fetchAllPhotos();
+    }
+  }, [pet.fotos]);
 
 
   return(
   <View style={{flex:1}}>
   <ScrollView style = {styles.container}>
-     <Image
-      source={{ uri: url }}
-      style={styles.pet_foto}
-    />
+
+    <View style={styles.carouselContainer}>
+      {loadingPhotos ? (
+        <ActivityIndicator size="small" color="#f7a800" style={styles.pet_foto} />
+      ) : (
+        <FlatList
+          data={urls}
+          horizontal
+          pagingEnabled // Faz a imagem "travar" centralizada ao deslizar
+          showsHorizontalScrollIndicator={false}
+          keyExtractor={(item) => item}
+          renderItem={({ item }) => (
+            <Image
+              source={{ uri: item }}
+              style={styles.carouselImage}
+            />
+          )}
+        />
+      )}
+    </View>
 
     <View  style={styles.name_container}>
       <Text style={styles.name_text}>{pet.nome} </Text>
@@ -209,6 +240,16 @@ export default function MeuPet() {
 
 
 const styles = StyleSheet.create({
+    carouselImage: {
+    width: SCREEN_WIDTH, // IMPORTANTE: A imagem precisa saber qual a largura para aparecer
+    height: 184,
+    resizeMode: 'cover',
+  },
+  carouselContainer: {
+    height: 184,
+    width: '100%',
+    backgroundColor: '#e6e7e8', // Cor de fundo para você ver se o espaço está lá
+  },
   drawer_header:{
     backgroundColor: '#fee29b',
   },

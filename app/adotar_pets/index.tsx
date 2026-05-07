@@ -53,10 +53,10 @@ function AnimalEntry({ animal }: { animal: Animal }) {
         <Ionicons name="heart-outline" size={24} color='#434343' />
 
       </View>
-      <TouchableOpacity onPress={()=>{
-      router.push(`/adotar_pets/${animal.id}`);
+      <TouchableOpacity onPress={() => {
+        router.push(`/adotar_pets/${animal.id}`);
 
-    }}>
+      }}>
 
         <Image
           source={{ uri: url }} s
