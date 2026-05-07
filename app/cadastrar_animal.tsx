@@ -142,9 +142,12 @@ export default function CadastroAnimal() {
 				saude: selectedHealth,
 				requisitosAdocao: selectedAdoptionRequirements,
 				mesesAdocao: selectedAdoptionMonths,
-				doencas,
+				visivel: true,
+        interessados: [],
+        doencas,
 				historia,
 				usuarioId: user.uid,
+
 			});
 
 			await setDoc(doc(db, 'users', user.uid), {

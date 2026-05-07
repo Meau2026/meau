@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import React, { useState, useEffect } from 'react';
 import { storage, db } from '@/firebaseConfig'; 
 import { ref, getDownloadURL, deleteObject } from 'firebase/storage';
-import { getDoc, doc, deleteDoc } from 'firebase/firestore';
+import { getDoc, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { Drawer } from 'expo-router/drawer'; 
 
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -24,7 +24,8 @@ interface Animal {
   vermifugado: string;
   castrado: string;
   doencas: string;
-
+  visivel: boolean;
+  interessados: string[];
   temperamento: string;
 }
 
@@ -69,11 +70,11 @@ function Pet( {pet} : {pet: Animal} ){
   const [url, setUrl] = useState<string | null>(null);
   
   useEffect(() => {
-    
+    setUrl(null); 
     getDownloadURL(ref(storage, pet.fotos[0]))
       .then((url) => setUrl(url))
       .catch((e) => console.error(e));
-  }, []); 
+  }, [pet]); 
 
 
   return(
@@ -156,46 +157,15 @@ crianças. Tem muito medo de raios e chuva."/>
 
 
 export default function MeuPet() {
-  const { id } = useLocalSearchParams();
-  const [pet, setPet] = useState<Animal>();
+  const { petData } = useLocalSearchParams();
+  const [pet, setPet] = useState<Animal | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  useEffect( () => {
-    const fetchPet = async () => {
-    try{
-      const petDoc = await getDoc(doc(db, "animais", id));
-      if(petDoc.exists()){
-        const data = petDoc.data()
-        setPet({
-          id: petDoc.id,
-          nome: data.nome,
-          porte: data.porte,
-          idade: data.idade,
-          sexo: data.sexo,
-          fotos: data.fotos,
-  
-          vacinado: 'sim',
-          vermifugado: 'sim',
-          castrado: 'Não',
-          doencas: 'nenhuma',
+  useEffect(() => {
 
-          temperamento: 'dócil',
-
-        });
-        setLoading(false);
-      }
-      
-    }
-    catch (e) {
-      console.error(e);
-      throw e;
-    }
-  }
-
-  fetchPet();
-
-  }, []);
-
+  setPet(JSON.parse(petData as string));
+  setLoading(false);
+  },[petData]);
   if (loading) {
     return(
       <View>
@@ -217,9 +187,29 @@ export default function MeuPet() {
         ),
 
       headerRight: () => (
-        <TouchableOpacity  style={{ marginRight: 12 }} >          
-        <Ionicons name="share-social-outline" size={24} color='#434343'  />
+        <View style={{flexDirection:'row'}}>
+        
+        <TouchableOpacity  style={{ marginRight: 12 }} onPress={async () => {
+          const new_visivel = !pet.visivel;
+          
+          const petRef = doc(db, "animais", pet.id);
+          await updateDoc(petRef, { visivel: new_visivel});
+
+          setPet({...pet, visivel: new_visivel});
+        }}> 
+        { pet.visivel &&
+          <Ionicons name="eye-off-outline" size={24} color='#434343'  />
+        }
+
+        { !pet.visivel &&
+
+          <Ionicons name="eye-outline" size={24} color='#434343'  />
+        }
         </TouchableOpacity>
+          <TouchableOpacity  style={{ marginRight: 12 }} >          
+            <Ionicons name="share-social-outline" size={24} color='#434343'  />
+          </TouchableOpacity>
+        </View>
         ),
 
     }}

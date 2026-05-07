@@ -21,6 +21,14 @@ interface Animal {
   idade: string;
   sexo: string;
   fotos: string[];
+
+  vacinado: string;
+  vermifugado: string;
+  castrado: string;
+  doencas: string;
+  visivel: boolean;
+  interessados: string[];
+  temperamento: string;
 }
 
 
@@ -40,7 +48,7 @@ function AnimalEntry({ animal }: { animal: Animal }) {
     getDownloadURL(ref(storage, animal.fotos[0]))
       .then((url) => setUrl(url))
       .catch((e) => console.error(e));
-  }, []);
+  }, [animal]);
 
   return (
 
@@ -53,10 +61,11 @@ function AnimalEntry({ animal }: { animal: Animal }) {
         <Ionicons name="heart-outline" size={24} color='#434343' />
 
       </View>
-      <TouchableOpacity onPress={() => {
-        router.push(`/adotar_pets/${animal.id}`);
 
-      }}>
+      <TouchableOpacity onPress={()=>{
+        router.push({ pathname:`/adotar_pets/${animal.id}`, params: {petData: JSON.stringify(animal)} });
+    }}>
+
 
         <Image
           source={{ uri: url }} s
@@ -95,17 +104,29 @@ function AnimalList() {
         let state: PageState = { byId: {}, ids: [] };
 
         animais.forEach((animalDoc) => {
+          const data = animalDoc.data();
           if (animalDoc.data().usuarioId !== user?.uid) {
-            state.byId[animalDoc.id] = {
-              id: animalDoc.id,
-              nome: animalDoc.data().nome,
-              porte: animalDoc.data().porte,
-              idade: animalDoc.data().idade,
-              sexo: animalDoc.data().sexo,
-              fotos: animalDoc.data().fotos,
-            };
+            const pet = {
+                  id: animalDoc.id,
+                  nome: data.nome,
+                  porte: data.porte,
+                  idade: data.idade,
+          sexo: data.sexo,
+          fotos: data.fotos, 
+          vacinado: 'sim',
+          vermifugado: 'sim',
+          castrado: 'Não',
+          doencas: 'nenhuma',
+          interessados: data.interessados,
+          visivel: data.visivel,
+          temperamento: 'dócil'};
+          
+          if(pet.visivel){
 
+          state.byId[animalDoc.id] = pet; 
             state.ids.push(animalDoc.id);
+          }
+            
 
           }
 
@@ -123,7 +144,7 @@ function AnimalList() {
 
     fetchAnimais()
 
-  }, []);
+  }, [user?.uid]);
 
   return (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.animal_list}>
