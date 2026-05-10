@@ -1,5 +1,5 @@
 
-import { Alert, LayoutAnimation, StyleSheet, Text, TouchableOpacity, View, Image,FlatList , ScrollView} from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Image , ScrollView} from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 

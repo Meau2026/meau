@@ -1,4 +1,4 @@
-import { Alert, LayoutAnimation, StyleSheet, Text, TouchableOpacity, View, Image,FlatList , ScrollView, ActivityIndicator} from 'react-native';
+import {  StyleSheet, Text, TouchableOpacity, View, Image, FlatList , ScrollView, ActivityIndicator} from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -142,8 +142,8 @@ crianças. Tem muito medo de raios e chuva."/>
   </TouchableOpacity>
 
   <TouchableOpacity style={styles.button} onPress={async () => {
-    await RemoverPet(pet)
-    router.replace('meus_pets/index');
+    RemoverPet(pet)
+    router.replace('meus_pets/remover_pet');
   }}>
     <Text style={styles.button_text}> REMOVER PET </Text>
   </TouchableOpacity>
@@ -162,10 +162,18 @@ export default function MeuPet() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   useEffect(() => {
-
-  setPet(JSON.parse(petData as string));
-  setLoading(false);
+  if (!petData || typeof petData !== 'string') {
+      return; 
+    }
+    try { 
+      setPet(JSON.parse(petData as string));
+      setLoading(false);
+    } catch(e){
+      console.error(e)
+    }
+  
   },[petData]);
+
   if (loading) {
     return(
       <View>

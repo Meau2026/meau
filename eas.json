@@ -14,10 +14,12 @@
       }
 
     },
-    "production": {
+   "production": {
+      "android": {
+        "buildType": "app-bundle" 
+      },
       "autoIncrement": true
-    }
-  },
+    }  },
   "submit": {
     "production": {}
   }
