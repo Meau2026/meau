@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import React, { useState, useEffect } from 'react';
 import { storage, db } from '@/firebaseConfig'; 
 import { ref, getDownloadURL, deleteObject } from 'firebase/storage';
-import { getDoc, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { getDoc, doc, deleteDoc, updateDoc, arrayRemove } from 'firebase/firestore';
 import { Drawer } from 'expo-router/drawer'; 
 
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -44,7 +44,7 @@ function PetInfo({label, info}){
 }
 
 const RemoverPet = async (pet: Animal) => {
-
+  const {user, loading} = useAuth();
   try{
     const deletePromisses = pet.fotos.map((url) => {
       const refFoto = ref(storage, url);
@@ -53,9 +53,15 @@ const RemoverPet = async (pet: Animal) => {
 
     await Promise.all(deletePromisses);
 
-    const petDoc= doc(db, "animais", pet.id);
+    const petDocRef = doc(db, "animais", pet.id);
     
-    await deleteDoc(petDoc);
+    await deleteDoc(petDocRef);
+
+    const userDocRef = doc(db, "users", user.uid);
+    
+    await updateDoc(userDocRef, {
+      animais: arrayRemove(pet.id)
+    });
 
 
   }

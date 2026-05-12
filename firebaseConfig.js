@@ -1,7 +1,7 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApp, getApps } from 'firebase/app';
 import { Platform } from 'react-native';
 // Optionally import the services that you want to use
-import { browserLocalPersistence, getReactNativePersistence, initializeAuth } from 'firebase/auth';
+import { browserLocalPersistence, getReactNativePersistence, initializeAuth, getAuth } from 'firebase/auth';
 // import {...} from 'firebase/database';
 import { getFirestore } from 'firebase/firestore';
 
@@ -25,7 +25,10 @@ const firebaseConfig = {
   measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-const app = initializeApp(firebaseConfig); //conexao com o firebase
+
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+
+//const app = initializeApp(firebaseConfig); //conexao com o firebase
 // For more information on how to access Firebase in your project,
 // see the Firebase documentation: https://firebase.google.com/docs/web/setup#access-firebase
 
@@ -47,9 +50,14 @@ if (Platform.OS === 'web') {
   });
 } else {
   // Configuração para Mobile 
+  try{
   auth = initializeAuth(app, {
     persistence: getReactNativePersistence(AsyncStorage),
   });
+  }
+  catch (e) {
+    auth = getAuth(app);
+  }
 }
 
 export { auth };

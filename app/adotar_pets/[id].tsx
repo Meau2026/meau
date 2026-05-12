@@ -1,26 +1,32 @@
-
-import { ActivityIndicator, Dimensions, FlatList, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { db, storage } from '@/firebaseConfig';
-import { Ionicons } from '@expo/vector-icons';
-import { Drawer } from 'expo-router/drawer';
-import { doc, getDoc, } from 'firebase/firestore';
-import { getDownloadURL, ref, } from 'firebase/storage';
 import React, { useEffect, useState } from 'react';
+import { 
+  ActivityIndicator, 
+  Dimensions, 
+  FlatList, 
+  Image, 
+  ScrollView, 
+  StyleSheet, 
+  Text, 
+  TouchableOpacity, 
+  View 
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 
-import { useLocalSearchParams, useRouter } from 'expo-router';
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-import { useAuth } from '@/contexts/AuthContext';
-import React, { useState, useEffect,  } from 'react';
-import { storage, db } from '@/firebaseConfig'; 
-import { ref, getDownloadURL,  } from 'firebase/storage';
-import { getDoc, doc,  } from 'firebase/firestore';
-import { Drawer } from 'expo-router/drawer'; 
-
+// Expo e Roteamento
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { Drawer } from 'expo-router/drawer';
+
+// Firebase Config e Funções
+import { db, storage } from '@/firebaseConfig';
+import { doc, getDoc, updateDoc, arrayRemove } from 'firebase/firestore';
+import { getDownloadURL, ref } from 'firebase/storage';
+
+
+import { useAuth } from '@/contexts/AuthContext';
+
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface Animal {
   id: string;
