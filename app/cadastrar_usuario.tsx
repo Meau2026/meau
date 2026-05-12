@@ -1,4 +1,4 @@
-import { db, storage } from '@/firebaseConfig';
+import { db, storage, auth } from '@/firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
@@ -22,8 +22,7 @@ export default function CadastroPessoal() {
 
   const navigation = useNavigation();  
 	
-  const auth = '';
-	const router = useRouter();
+ 	const router = useRouter();
 	const [nome, setNome] = useState<string>('');
 	const [idade, setIdade] = useState<string>('');
 	const [email, setEmail] = useState<string>('');

@@ -7,11 +7,11 @@ import 'react-native-reanimated';
 
 
 import {
-  DrawerContentComponentProps,
+DrawerContentComponentProps,
   DrawerItem
 } from '@react-navigation/drawer';
 
-import { Alert, LayoutAnimation, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { Alert, LayoutAnimation, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Image } from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -20,8 +20,10 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState, useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 
-import { auth } from '@/firebaseConfig';
+import { auth, db, storage } from '@/firebaseConfig';
 import { signOut } from 'firebase/auth';
+import { ref, getDownloadURL } from 'firebase/storage';
+import { getDoc, doc } from 'firebase/firestore';
 
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { useNavigation } from 'expo-router';
@@ -34,7 +36,10 @@ import { useFonts, Roboto_400Regular, Roboto_500Medium } from '@expo-google-font
 import { Courgette_400Regular } from '@expo-google-fonts/courgette';
 
 
-
+interface UserInfo {
+  nome: string;
+  fotoPerfil: string;
+}
 
 const createLocalNavegation = (props: DrawerContentComponentProps) => {
   return (route) => {
@@ -49,7 +54,38 @@ function Header(props: DrawerContentComponentProps) {
   const [expanded, setExpanded] = useState(false);
   const {user , loading } = useAuth();
   const navigate = createLocalNavegation(props)
+  const [userInfo, setUserInfo] = useState<UserInfo>({nome: "", fotoPerfil: null});
+  useEffect(() =>{
 
+    const getUserData = async () => {
+      if (!user?.uid) return;
+      try{
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if(userDoc.exists()){
+        const data = userDoc.data();
+        let urlPerfil;
+        
+        if (data.fotoUrl) {
+            try {
+              urlPerfil = await getDownloadURL(ref(storage, data.fotoUrl));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+
+        setUserInfo({
+          nome: data.nome,
+          fotoPerfil: urlPerfil,
+        })
+        }
+      }catch(e){console.error(e)}
+    }
+
+  
+
+  getUserData()
+
+  }, [user?.uid]);
   const body = (
     <View>
     { !user &&
@@ -104,9 +140,16 @@ function Header(props: DrawerContentComponentProps) {
         }}>
 
         <View style={styles.header}>
-          <View style={styles.picture_placeholder} />
+          
+          <View style={styles.picture_placeholder}>
+          <Image 
+          source={{uri: userInfo.fotoPerfil}}
+          style={styles.foto_perfil}
+          />
+
+          </View>
           <View style={styles.header_expand_button}>
-            <Text style={styles.text_title}> Nome do Cidadao </Text>
+            <Text style={styles.text_title}> {user? userInfo.nome : 'Visitante'} </Text>
             <Ionicons name="chevron-down" size={24} />
           </View>
         </View>
@@ -401,6 +444,11 @@ const styles = StyleSheet.create({
     height: 64,
     borderRadius: 32,
     backgroundColor: '#fee29b',
+  },
+  foto_perfil:{
+    width: '100%',
+    height: '100%',
+    borderRadius: 32
   },
   header_expand_button: {
     flexDirection: 'row',

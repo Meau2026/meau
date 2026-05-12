@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { 
   ActivityIndicator, 
@@ -14,18 +13,21 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
-// Expo Router
+// Expo e Roteamento
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 
-// Firebase
+// Firebase Config e Funções
 import { db, storage } from '@/firebaseConfig';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayRemove } from 'firebase/firestore';
 import { getDownloadURL, ref } from 'firebase/storage';
 
 
+import { useAuth } from '@/contexts/AuthContext';
+
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
 interface Animal {
   id: string;
   nome: string;
