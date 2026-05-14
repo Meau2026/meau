@@ -126,7 +126,7 @@ function Header(props: DrawerContentComponentProps) {
       <DrawerItem
         label='Chat'
         labelStyle={styles.text_entry}
-        onPress={() => navigate('index')}
+        onPress={() => navigate('chat/chat')}
       />
     </View>
   );
