@@ -1,39 +1,37 @@
 import { Drawer } from 'expo-router/drawer';
 
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
 
 import {
-DrawerContentComponentProps,
+  DrawerContentComponentProps,
   DrawerItem
 } from '@react-navigation/drawer';
 
-import { Alert, LayoutAnimation, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Image } from 'react-native';
+import { ActivityIndicator, Alert, Image, LayoutAnimation, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Ionicons } from '@expo/vector-icons';
 
-import React, { useState, useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
+import React, { useEffect, useState } from 'react';
 
 import { auth, db, storage } from '@/firebaseConfig';
 import { signOut } from 'firebase/auth';
-import { ref, getDownloadURL } from 'firebase/storage';
-import { getDoc, doc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
+import { getDownloadURL, ref } from 'firebase/storage';
 
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
-import { useNavigation } from 'expo-router';
 
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 
-import { useFonts, Roboto_400Regular, Roboto_500Medium } from '@expo-google-fonts/roboto';
 import { Courgette_400Regular } from '@expo-google-fonts/courgette';
+import { Roboto_400Regular, Roboto_500Medium, useFonts } from '@expo-google-fonts/roboto';
 
 
 interface UserInfo {
@@ -127,6 +125,12 @@ function Header(props: DrawerContentComponentProps) {
         label='Chat'
         labelStyle={styles.text_entry}
         onPress={() => navigate('chat/chat')}
+      />
+      <Separator />
+      <DrawerItem
+        label='Meus chats'
+        labelStyle={styles.text_entry}
+        onPress={() => navigate('chat/meus_chats')}
       />
     </View>
   );
