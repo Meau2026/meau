@@ -1,25 +1,26 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
-import { 
-  ActivityIndicator, 
-  Dimensions, 
-  FlatList, 
-  Image, 
-  ScrollView, 
-  StyleSheet, 
-  Text, 
-  TouchableOpacity, 
-  View 
+import {
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  FlatList,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 
 // Expo e Roteamento
-import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 
 // Firebase Config e Funções
 import { db, storage } from '@/firebaseConfig';
-import { doc, getDoc, updateDoc, arrayRemove } from 'firebase/firestore';
+import { addDoc, arrayUnion, collection, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { getDownloadURL, ref } from 'firebase/storage';
 
 
@@ -42,6 +43,8 @@ interface Animal {
   doencas: string;
 
   temperamento: string;
+
+  usuarioId: string;
 }
 
 
@@ -60,8 +63,7 @@ function PetInfo({label, info}){
 
 
 
-function Pet( {pet} : {pet: Animal} ){
-  const router = useRouter();
+function Pet( {pet, onPressAdotar} : {pet: Animal; onPressAdotar: () => Promise<void>} ){
   const [urls, setUrls] = useState<string[]>([]);
   const [loadingPhotos, setLoadingPhotos] = useState(true);
  
@@ -165,7 +167,7 @@ crianças. Tem muito medo de raios e chuva."/>
   </ScrollView>
 
   <View style={styles.buttons_container}>
-  <TouchableOpacity style={styles.button}>
+  <TouchableOpacity style={styles.button} onPress={onPressAdotar}>
     <Text style={styles.button_text}> PRETENDO ADOTAR </Text>
   </TouchableOpacity>
 
@@ -184,6 +186,52 @@ export default function MeuPet() {
   const [pet, setPet] = useState<Animal>();
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { user } = useAuth();
+
+  const handleCreateChat = async () => {
+    if (!pet) {
+      console.warn('Pet não carregado ainda.');
+      return;
+    }
+
+    if (!user) {
+      Alert.alert(
+        'Atenção',
+        'Você precisa fazer login para iniciar o chat de adoção.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    try {
+      const chatRef = await addDoc(collection(db, 'chats'), {
+        donoId: pet.usuarioId,
+        interessadoId: user.uid,
+        animalId: pet.id,
+        status: 0,
+        createdAt: serverTimestamp(),
+      });
+
+      await addDoc(collection(db, 'chats', chatRef.id, 'mensagens'), {
+        usuarioId: user.uid,
+        conteudo: 'Olá! Tenho interesse neste pet e gostaria de conversar sobre a adoção.',
+        timestamp: serverTimestamp(),
+      });
+
+      await setDoc(doc(db, 'users', user.uid), {
+        chats: arrayUnion(chatRef.id),
+      }, { merge: true });
+
+      await setDoc(doc(db, 'users', pet.usuarioId), {
+        chats: arrayUnion(chatRef.id),
+      }, { merge: true });
+
+      console.log('Chat criado com ID:', chatRef.id);
+    } catch (e) {
+      console.error('Erro ao criar chat:', e);
+    }
+  }
+
   useEffect(() => {
     setLoading(true);
     const fetchPet = async () => {
@@ -206,6 +254,8 @@ export default function MeuPet() {
 
           temperamento: 'dócil',
 
+          usuarioId: data.usuarioId,
+
         });
         setLoading(false);
       }
@@ -221,7 +271,7 @@ export default function MeuPet() {
 
   }, [id]);
 
-  if (loading) {
+  if (loading || !pet) {
     return(
       <View>
         <ActivityIndicator size="large"/>
@@ -250,7 +300,7 @@ export default function MeuPet() {
     }}
   />
   
-  <Pet pet={pet}/> 
+  <Pet pet={pet} onPressAdotar={handleCreateChat}/> 
 
   </SafeAreaView >
   );
