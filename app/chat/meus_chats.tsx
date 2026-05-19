@@ -1,4 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
+import { DrawerNavigationProp } from '@react-navigation/drawer';
+import { useNavigation } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 import React from 'react';
@@ -52,6 +54,7 @@ const CHAT_DATA: ChatMessage[] = [
 ];
 
 export default function ChatScreen() {
+  const navigation = useNavigation<DrawerNavigationProp<any>>();
   const router = useRouter();
 
   const renderChatItem = ({ item }: { item: ChatMessage }) => (
@@ -76,15 +79,18 @@ export default function ChatScreen() {
     <SafeAreaView edges={['right', 'bottom', 'left']} style={styles.container}>
       <Drawer.Screen
         options={{
-          headerTitle: 'Chat',
+          headerTitle: 'Chats',
           headerTintColor: '#434343',
           headerStyle: styles.drawerHeader,
           headerTitleStyle: styles.drawerTitle,
           headerLeft: () => (
-            <TouchableOpacity style={{ marginLeft: 16 }} onPress={() => router.back()}>
-              <Ionicons name="menu-outline" size={24} color="#434343" />
+            <TouchableOpacity 
+                style={{ marginLeft: 16 }} 
+                onPress={() => navigation.openDrawer()} // Alterado de router.back() para openDrawer()
+            >
+                <Ionicons name="menu-outline" size={24} color="#434343" />
             </TouchableOpacity>
-          ),
+        ),
           headerRight: () => (
             <TouchableOpacity style={{ marginRight: 16 }}>
               <Ionicons name="search-outline" size={24} color="#434343" />
