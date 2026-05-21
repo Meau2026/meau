@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react'
-import { GiftedChat } from 'react-native-gifted-chat'
+import { GiftedChat, Bubble } from 'react-native-gifted-chat'
 import { useHeaderHeight } from '@react-navigation/elements'
 
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,6 +16,48 @@ import { db } from '@/firebaseConfig';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 
 import {useAuth} from '@/contexts/AuthContext';
+
+
+
+
+function CustomBubble(props) {
+
+  return (
+  <Bubble
+  {...props}
+    wrapperStyle={{
+          right: {
+            backgroundColor: '#cfe9e5', 
+            borderRadius: 4,    
+            marginRight: 16,
+          },
+          left: {
+            backgroundColor: '#ffffff',
+            borderRadius: 4,
+            marginLeft: 16,
+          },
+        }}
+    textStyle={{
+          right: {
+            color: '#434343',          
+            fontFamily: 'Roboto-Regular',     
+            fontSize: 14,
+          },
+          left: {
+            color: '#434343',          
+            fontFamily: 'Roboto-Regular',     
+            fontSize: 14,
+          },
+        }}
+
+  />
+
+  );
+
+}
+
+
+
 export default function Chat() {
   const test_id = 'ChQpRF4jAaGKSHHfjdV5'
   const [messages, setMessages] = useState([])
@@ -85,7 +127,8 @@ export default function Chat() {
     );
   }
   return (
-    <SafeAreaView style={{flex:1}}>
+    <SafeAreaView style={{flex:1, backgroundColor: '#f1f2f2',
+}}>
  <Drawer.Screen
     options = {{
       headerTintColor: '#434343',
@@ -111,6 +154,7 @@ export default function Chat() {
       onSend={messages => onSend(messages)}
       user={userInfo}
       loadEarlier={false}
+      renderBubble={(props) => <CustomBubble {...props} />}
       keyboardAvoidingViewProps={{ keyboardVerticalOffset: headerHeight }}
     />
     </SafeAreaView>
