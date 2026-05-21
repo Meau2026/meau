@@ -1,64 +1,106 @@
+import { useAuth } from '@/contexts/AuthContext';
+import { db } from '@/firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
 import { DrawerNavigationProp } from '@react-navigation/drawer';
 import { useNavigation } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
-import React from 'react';
+import { collection, doc, getDoc, getDocs, or, query, where } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
 import {
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface ChatMessage {
   id: string;
-  nomeItem: string; // Nome da pessoa + Nome do animal (ex: AMANDA TEIXEIRA | PEQUI)
+  nomeItem: string;
   ultimaMensagem: string;
   horario: string;
   foto: string; 
 }
 
-const CHAT_DATA: ChatMessage[] = [
-  {
-    id: '1',
-    nomeItem: 'AMANDA TEIXEIRA | PEQUI',
-    ultimaMensagem: 'Ele é uma gracinha! Posso ir vê-lo na...',
-    horario: '18:32',
-    foto: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150',
-  },
-  {
-    id: '2',
-    nomeItem: 'ELIAS ROCHA | BACON',
-    ultimaMensagem: 'Ele gosta de criancas? Tenho uma fi...',
-    horario: '14:12',
-    foto: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150',
-  },
-  {
-    id: '3',
-    nomeItem: 'MARÍLIA MARTINS | BACON',
-    ultimaMensagem: 'Olá! Gostaria de adotar o seu gato!',
-    horario: '11:37',
-    foto: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150',
-  },
-  {
-    id: '4',
-    nomeItem: 'ANA LUÍSA | PLUTO',
-    ultimaMensagem: 'Emille, tudo bem? Quando você esta...',
-    horario: '07:37',
-    foto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-  },
-];
-
 export default function ChatScreen() {
   const navigation = useNavigation<DrawerNavigationProp<any>>();
   const router = useRouter();
+  const { user } = useAuth(); 
+  const [chats, setChats] = useState<ChatMessage[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchChats = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const chatsRef = collection(db, 'chats');
+        const q = query(
+          chatsRef,
+          or(
+            where('donoId', '==', user.uid),
+            where('interessadoId', '==', user.uid)
+          )
+        );
+
+        const querySnapshot = await getDocs(q);
+        const listaChats: ChatMessage[] = [];
+
+        for (const chatDoc of querySnapshot.docs) {
+          const chatData = chatDoc.data();
+
+          // Identifica quem é a outra pessoa na conversa
+          const outroUsuarioID = chatData.donoId === user.uid ? chatData.interessadoId : chatData.donoId;
+
+          // Busca os dados do outro usuário de forma paralela no Firestore
+          const userDocSnap = await getDoc(doc(db, 'users', outroUsuarioID));
+          const animalDocSnap = await getDoc(doc(db, 'animais', chatData.animalId));
+          const nomeUsuario = userDocSnap.exists() ? userDocSnap.data().nome?.toUpperCase() : 'USUÁRIO';
+          const nomeAnimal = animalDocSnap.exists() ? animalDocSnap.data().nome?.toUpperCase() : 'ANIMAL';
+          const horarioFormatado = chatData.updatedAt?.toDate 
+            ? chatData.updatedAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            : '12:00';
+
+          listaChats.push({
+            id: chatDoc.id,
+            nomeItem: `${nomeUsuario} | ${nomeAnimal}`,
+            ultimaMensagem: chatData.ultimaMensagem || 'Inicie a conversa...',
+            horario: horarioFormatado,
+            foto: userDocSnap.exists() ? userDocSnap.data().fotoUrl : 'https://placehold.co/150.png', 
+          });
+        }
+
+        setChats(listaChats);
+      } catch (error) {
+        console.error("Erro ao buscar conversas: ", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChats();
+  }, [user]);
+
+  const handleChatPress = (chatId: string) => {
+    router.push({
+      pathname: '/chat/chat', 
+      params: { id: chatId }
+    });
+  };
 
   const renderChatItem = ({ item }: { item: ChatMessage }) => (
-    <TouchableOpacity style={styles.chatRow} activeOpacity={0.7}>
+    <TouchableOpacity 
+      style={styles.chatRow} 
+      activeOpacity={0.7}
+      onPress={() => handleChatPress(item.id)}
+    >
       <Image source={{ uri: item.foto }} style={styles.avatar} />
       
       <View style={styles.textContainer}>
@@ -75,6 +117,14 @@ export default function ChatScreen() {
     </TouchableOpacity>
   );
 
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#88c9bf" />
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView edges={['right', 'bottom', 'left']} style={styles.container}>
       <Drawer.Screen
@@ -84,13 +134,10 @@ export default function ChatScreen() {
           headerStyle: styles.drawerHeader,
           headerTitleStyle: styles.drawerTitle,
           headerLeft: () => (
-            <TouchableOpacity 
-                style={{ marginLeft: 16 }} 
-                onPress={() => navigation.openDrawer()} // Alterado de router.back() para openDrawer()
-            >
-                <Ionicons name="menu-outline" size={24} color="#434343" />
+            <TouchableOpacity style={{ marginLeft: 16 }} onPress={() => navigation.openDrawer()}>
+              <Ionicons name="menu-outline" size={24} color="#434343" />
             </TouchableOpacity>
-        ),
+          ),
           headerRight: () => (
             <TouchableOpacity style={{ marginRight: 16 }}>
               <Ionicons name="search-outline" size={24} color="#434343" />
@@ -100,7 +147,7 @@ export default function ChatScreen() {
       />
 
       <FlatList
-        data={CHAT_DATA}
+        data={chats}
         keyExtractor={(item) => item.id}
         renderItem={renderChatItem}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
