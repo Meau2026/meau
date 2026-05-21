@@ -1,54 +1,89 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect, useMemo } from 'react'
 import { GiftedChat } from 'react-native-gifted-chat'
 import { useHeaderHeight } from '@react-navigation/elements'
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import { Drawer } from 'expo-router/drawer';
 import {  useRouter,  } from 'expo-router';
+
+
+import { db } from '@/firebaseConfig';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
+
+import {useAuth} from '@/contexts/AuthContext';
 export default function Chat() {
+  const test_id = 'ChQpRF4jAaGKSHHfjdV5'
   const [messages, setMessages] = useState([])
+  const [_loading, set_Loading] = useState(true);
   const router = useRouter();
-  // keyboardVerticalOffset = distance from screen top to GiftedChat container
-  // useHeaderHeight() returns status bar + navigation header height
+
+
+  const {user, loading} = useAuth(); 
   const headerHeight = useHeaderHeight()
 
-  useEffect(() => {
-    setMessages([
-      {
-        _id: 1,
-        text: 'Test 1',
-        createdAt: new Date(),
+  useEffect(() => { 
+    const msgRef = collection(db, 'chats', test_id, 'mensagens');
+    
+    // pega as mensagens a partir da mais recente
+    const msgQuery = query(msgRef, orderBy('createdAt', 'desc'));
+    
+    const unsubscribe = onSnapshot(msgQuery, (snapshot) => {
+      const newMsgs = snapshot.docs.map(doc => {
+      const data = doc.data();
+
+      return {
+        _id: doc.id, 
+        ...data,
+        createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
+        };
+      
+    });
+
+    setMessages(newMsgs);
+    set_Loading(false);
+    }); 
+    return () => unsubscribe();
+  }, [test_id]);
+
+  const onSend = useCallback( async (messages = []) => {
+    if (messages.length === 0) return;
+
+    const { text } = messages[0];
+
+    try{
+      const msgRef = collection(db, 'chats', test_id, 'mensagens');
+
+      await addDoc(msgRef, {
+        text: text,
+        createdAt: serverTimestamp(),
         user: {
-          _id: 2,
-          name: 'John Doe',  
-          avatar: 'https://placeimg.com/140/140/any',
+          _id: user.uid,
         },
-      },
- {
-        _id: 2,
-        text: 'alo alo',
-        createdAt: new Date(),
-        user: {
-          _id: 2,
-          name: 'John Doe',
-          avatar: 'https://placeimg.com/140/140/any',
-        },
-      },
+      });
 
-    ])
-  }, [])
+    } catch (e) {
+      console.error("erro ao enviar mensagem: ", e);
+    }
 
-  const onSend = useCallback((messages = []) => {
-    setMessages(previousMessages =>
-      GiftedChat.append(previousMessages, messages),
-    )
-  }, [])
+  }, [test_id])
 
+  const userInfo = useMemo(() => ({
+    _id: user?.uid,
+    name: "Testando",
+  }), [user?.uid]);
+
+  if (loading || _loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#88c9bf" />
+      </View>
+    );
+  }
   return (
     <SafeAreaView style={{flex:1}}>
  <Drawer.Screen
@@ -57,7 +92,7 @@ export default function Chat() {
       headerTitle: "chat teste",
       headerStyle: styles.drawer_header,
       headerLeft: () => (
-        <TouchableOpacity style={{marginLeft:12}}  onPress={() => router.replace('/index')}>
+        <TouchableOpacity style={{marginLeft:12}}  onPress={() => router.replace('index')}>
           <Ionicons name="arrow-back-outline" size={24} color='#434343' />
         </TouchableOpacity>
         ),
@@ -74,9 +109,8 @@ export default function Chat() {
     <GiftedChat
       messages={messages}
       onSend={messages => onSend(messages)}
-      user={{
-        _id: 4,
-      }}
+      user={userInfo}
+      loadEarlier={false}
       keyboardAvoidingViewProps={{ keyboardVerticalOffset: headerHeight }}
     />
     </SafeAreaView>

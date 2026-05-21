@@ -213,9 +213,11 @@ export default function MeuPet() {
       });
 
       await addDoc(collection(db, 'chats', chatRef.id, 'mensagens'), {
-        usuarioId: user.uid,
-        conteudo: 'Olá! Tenho interesse neste pet e gostaria de conversar sobre a adoção.',
-        timestamp: serverTimestamp(),
+        user: {
+          _id: user.uid,
+        }, 
+        text: 'Olá! Tenho interesse neste pet e gostaria de conversar sobre a adoção.',
+        createdAt: serverTimestamp(),
       });
 
       await setDoc(doc(db, 'users', user.uid), {
