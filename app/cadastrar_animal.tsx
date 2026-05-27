@@ -2,19 +2,20 @@ import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { addDoc, arrayUnion, collection, doc, setDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import React, { useState } from 'react';
-import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import MapView, { Marker, Region } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 
-import { Drawer } from 'expo-router/drawer';
 import { useNavigation } from 'expo-router';
-import { DrawerActions } from '@react-navigation/native';
+import { Drawer } from 'expo-router/drawer';
 
 export default function CadastroAnimal() {
 
@@ -34,6 +35,29 @@ export default function CadastroAnimal() {
 	const [selectedAdoptionMonths, setSelectedAdoptionMonths] = useState<string[]>([]);
 	const [doencas, setDoencas] = useState('');
 	const [historia, setHistoria] = useState('');
+
+	const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+	const [region, setRegion] = useState<Region | null>(null);
+
+	useEffect(() => {
+		(async () => {
+			const { status } = await Location.requestForegroundPermissionsAsync();
+			if (status !== 'granted') {
+				Alert.alert('Permissão necessária', 'Precisamos da sua localização para facilitar o preenchimento do mapa.');
+				return;
+			}
+
+			const currentPos = await Location.getCurrentPositionAsync({});
+			const initialRegion = {
+				latitude: currentPos.coords.latitude,
+				longitude: currentPos.coords.longitude,
+				latitudeDelta: 0.01,
+				longitudeDelta: 0.01,
+			};
+			setRegion(initialRegion);
+			setLocation({ latitude: currentPos.coords.latitude, longitude: currentPos.coords.longitude });
+		})();
+	}, []);
 
 	const handleAddPhoto = async () => {
 		const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
@@ -147,6 +171,7 @@ export default function CadastroAnimal() {
         doencas,
 				historia,
 				usuarioId: user.uid,
+				localizacao: location,
 
 			});
 
@@ -424,6 +449,28 @@ export default function CadastroAnimal() {
 				<Text style={styles.sectionTitle}>SOBRE O ANIMAL</Text>
 				<TextInput style={styles.input} placeholder="Compartilhe a história do animal" value={historia} onChangeText={setHistoria} />
 
+				<Text style={styles.sectionTitle}>LOCALIZAÇÃO DO ANIMAL</Text>
+				{region ? (
+					<View style={styles.mapContainer}>
+						<MapView
+							style={styles.map}
+							initialRegion={region}
+							onPress={(e) => setLocation(e.nativeEvent.coordinate)}
+						>
+							{location && (
+								<Marker
+									coordinate={location}
+									draggable
+									onDragEnd={(e) => setLocation(e.nativeEvent.coordinate)}
+								/>
+							)}
+						</MapView>
+						<Text style={styles.mapHint}>Toque no mapa ou arraste o marcador para o local exato</Text>
+					</View>
+				) : (
+					<ActivityIndicator size="small" color="#88C9BF" style={{ marginBottom: 20 }} />
+				)}
+
 				<TouchableOpacity style={styles.button} onPress={handleAdoptButtonPress}>
 					<Text style={styles.buttonText}>COLOCAR PARA ADOÇÃO</Text>
 				</TouchableOpacity>
@@ -531,5 +578,23 @@ const styles = StyleSheet.create({
 	},
 	checkboxCheck: {
 		width: 10, height: 10, borderRadius: 2, backgroundColor: '#FFFFFF'
-	}
+	},
+	mapContainer: {
+		width: '100%',
+		marginBottom: 20,
+		alignItems: 'center',
+	},
+	map: {
+		width: '100%',
+		height: 250,
+		borderRadius: 4,
+		borderWidth: 1,
+		borderColor: '#E6E7E8',
+	},
+	mapHint: {
+		fontSize: 12,
+		color: '#757575',
+		marginTop: 8,
+		textAlign: 'center',
+	},
 });
