@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react'
-import { GiftedChat, Bubble } from 'react-native-gifted-chat'
+import { GiftedChat, Bubble, InputToolbar, Composer, Send } from 'react-native-gifted-chat'
 import { useHeaderHeight } from '@react-navigation/elements'
 
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,7 +9,7 @@ import { StyleSheet, TouchableOpacity, View, ActivityIndicator } from 'react-nat
 
 import { Ionicons } from '@expo/vector-icons';
 import { Drawer } from 'expo-router/drawer';
-import {  useRouter,  } from 'expo-router';
+import {  useRouter,  useLocalSearchParams} from 'expo-router';
 
 
 import { db } from '@/firebaseConfig';
@@ -18,7 +18,14 @@ import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 
 import {useAuth} from '@/contexts/AuthContext';
 
 
-
+interface ChatData{
+  id: string;
+  nomeUser: string;
+  nomeItem: string;
+  ultimaMensagem: string;
+  horario: string;
+  foto: string; 
+};
 
 function CustomBubble(props) {
 
@@ -57,9 +64,62 @@ function CustomBubble(props) {
 }
 
 
+function CustomInputToolbar(props){
+
+  return (
+    <InputToolbar
+      {...props}
+      containerStyle={{
+        backgroundColor: '#f1f2f2',
+        borderTopWidth: 0,          
+        paddingpaddingBottom: 4,
+        paddingTop: 4,
+      }}
+      primaryStyle={{ alignItems: 'flex-end' }} 
+    />
+  );
+}
+
+function CustomComposer(props){
+
+return (
+    <Composer
+      {...props}
+      textInputStyle={{
+        backgroundColor: '#ffffff', 
+        minHeight: 54,
+        borderRadius: 4,
+        paddingHorizontal: 16,
+        paddingTop: 10,
+        paddingBottom: 10,
+        marginLeft: 16,
+        marginBottom: 12,
+        //texto
+        color: '#434343',          
+        fontFamily: 'Roboto-Regular',        
+        fontSize: 14,
+      }}
+    />
+  );
+}
+
+function CustomSend(props){
+
+return (
+  <Send {...props} containerStyle={{ justifyContent: 'center', alignItems: 'center' }}>
+   <View style={styles.send_buttom}>
+       
+        <Ionicons name="send" size={24} color="#ffffff" style={{marginLeft: 3}} />
+
+      </View> 
+  </Send>
+);
+
+}
 
 export default function Chat() {
-  const test_id = 'ChQpRF4jAaGKSHHfjdV5'
+  const { chatInfo } = useLocalSearchParams(); 
+  const [chat, setChat] = useState<ChatData | null>(null); 
   const [messages, setMessages] = useState([])
   const [_loading, set_Loading] = useState(true);
   const router = useRouter();
@@ -68,10 +128,27 @@ export default function Chat() {
   const {user, loading} = useAuth(); 
   const headerHeight = useHeaderHeight()
 
-  useEffect(() => { 
-    const msgRef = collection(db, 'chats', test_id, 'mensagens');
+  useEffect(() => {
+    let chatinfo;
+    if(!chatInfo || typeof chatInfo !== 'string'){
+      console.log("ainda nada") 
+      return;
+    }
+
+    try{
+      chatinfo = JSON.parse(chatInfo as string);
+      setChat(chatinfo);
+      
+
+    } catch(e) { 
+      console.error("nao foi possivel carregar as informacoes do chat");
+      return;
+    }
+    console.log(chatinfo.id)
+    const msgRef = collection(db, 'chats', chatinfo.id, 'mensagens');
     
     // pega as mensagens a partir da mais recente
+    //
     const msgQuery = query(msgRef, orderBy('createdAt', 'desc'));
     
     const unsubscribe = onSnapshot(msgQuery, (snapshot) => {
@@ -90,7 +167,7 @@ export default function Chat() {
     set_Loading(false);
     }); 
     return () => unsubscribe();
-  }, [test_id]);
+  }, [chatInfo]);
 
   const onSend = useCallback( async (messages = []) => {
     if (messages.length === 0) return;
@@ -98,7 +175,8 @@ export default function Chat() {
     const { text } = messages[0];
 
     try{
-      const msgRef = collection(db, 'chats', test_id, 'mensagens');
+      console.log(chat?.id);
+      const msgRef = collection(db, 'chats', chat?.id, 'mensagens');
 
       await addDoc(msgRef, {
         text: text,
@@ -112,7 +190,7 @@ export default function Chat() {
       console.error("erro ao enviar mensagem: ", e);
     }
 
-  }, [test_id])
+  }, [chat?.id])
 
   const userInfo = useMemo(() => ({
     _id: user?.uid,
@@ -132,7 +210,7 @@ export default function Chat() {
  <Drawer.Screen
     options = {{
       headerTintColor: '#434343',
-      headerTitle: "chat teste",
+      headerTitle: chat?.nomeUser || "",
       headerStyle: styles.drawer_header,
       headerLeft: () => (
         <TouchableOpacity style={{marginLeft:12}}  onPress={() => router.replace('index')}>
@@ -155,7 +233,13 @@ export default function Chat() {
       user={userInfo}
       loadEarlier={false}
       renderBubble={(props) => <CustomBubble {...props} />}
+      renderAvatar={() => null}
+      renderSend={(props) => <CustomSend {...props} />}
+      renderInputToolbar={(props) => <CustomInputToolbar {...props} />}
+      renderComposer={(props) => <CustomComposer {...props} />}
+      alwaysShowSend={true}
       keyboardAvoidingViewProps={{ keyboardVerticalOffset: headerHeight }}
+      placeholder="Digite sua mensagem..."
     />
     </SafeAreaView>
   )
@@ -169,6 +253,17 @@ const styles = StyleSheet.create({
   },
   drawer_header: {
   
+  },
+  send_buttom: {
+    width: 44,
+    height: 44,
+    marginBottom: 32,
+    marginRight: 16,
+    marginLeft: 16,
+    backgroundColor: '#88c9bf',
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
 
 

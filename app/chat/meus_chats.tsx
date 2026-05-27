@@ -20,6 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface ChatMessage {
   id: string;
+  nomeUser: string;
   nomeItem: string;
   ultimaMensagem: string;
   horario: string;
@@ -28,7 +29,7 @@ interface ChatMessage {
 
 export default function ChatScreen() {
   const navigation = useNavigation<DrawerNavigationProp<any>>();
-  const router = useRouter();
+  const router = useRouter(); 
   const { user } = useAuth(); 
   const [chats, setChats] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,6 +71,7 @@ export default function ChatScreen() {
 
           listaChats.push({
             id: chatDoc.id,
+            nomeUser: nomeUsuario,
             nomeItem: `${nomeUsuario} | ${nomeAnimal}`,
             ultimaMensagem: chatData.ultimaMensagem || 'Inicie a conversa...',
             horario: horarioFormatado,
@@ -88,10 +90,10 @@ export default function ChatScreen() {
     fetchChats();
   }, [user]);
 
-  const handleChatPress = (chatId: string) => {
+  const handleChatPress = (item: ChatMessage ) => {
     router.push({
       pathname: '/chat/chat', 
-      params: { id: chatId }
+      params: { chatInfo:  JSON.stringify(item) }
     });
   };
 
@@ -99,7 +101,7 @@ export default function ChatScreen() {
     <TouchableOpacity 
       style={styles.chatRow} 
       activeOpacity={0.7}
-      onPress={() => handleChatPress(item.id)}
+      onPress={() => handleChatPress(item)}
     >
       <Image source={{ uri: item.foto }} style={styles.avatar} />
       
