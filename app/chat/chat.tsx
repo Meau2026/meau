@@ -131,7 +131,7 @@ export default function Chat() {
   useEffect(() => {
     let chatinfo;
     if(!chatInfo || typeof chatInfo !== 'string'){
-      console.log("ainda nada") 
+      
       return;
     }
 
@@ -144,7 +144,7 @@ export default function Chat() {
       console.error("nao foi possivel carregar as informacoes do chat");
       return;
     }
-    console.log(chatinfo.id)
+   
     const msgRef = collection(db, 'chats', chatinfo.id, 'mensagens');
     
     // pega as mensagens a partir da mais recente
@@ -213,14 +213,14 @@ export default function Chat() {
       headerTitle: chat?.nomeUser || "",
       headerStyle: styles.drawer_header,
       headerLeft: () => (
-        <TouchableOpacity style={{marginLeft:12}}  onPress={() => router.replace('index')}>
+        <TouchableOpacity style={{marginLeft:12}}  onPress={() => router.replace('chat/meus_chats')}>
           <Ionicons name="arrow-back-outline" size={24} color='#434343' />
         </TouchableOpacity>
         ),
 
       headerRight: () => (
         <TouchableOpacity  style={{ marginRight: 12 }} >          
-        <Ionicons name="share-social-outline" size={24} color='#434343'  />
+        <Ionicons name="ellipsis-vertical" size={24} color='#434343'  />
         </TouchableOpacity>
         ),
 
@@ -252,7 +252,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#f1f2f2',
   },
   drawer_header: {
-  
+    backgroundColor: '#cfe9e5',
+ 
   },
   send_buttom: {
     width: 44,
