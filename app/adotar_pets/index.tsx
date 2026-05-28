@@ -8,7 +8,7 @@ import { db, storage } from '@/firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
 import { Drawer } from 'expo-router/drawer';
 import { StatusBar } from 'expo-status-bar';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, where, onSnapshot } from 'firebase/firestore';
 import { getDownloadURL, ref } from 'firebase/storage';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
@@ -95,54 +95,47 @@ function AnimalList() {
 
   useEffect(() => {
 
+    if (!user?.uid) return;
 
-    const fetchAnimais = async () => {
-      try {
+    const animaisRef = collection(db, "animais");
+    
+    const q = query(animaisRef, where("visivel", "==", true));
 
-        const animais = await getDocs(collection(db, "animais"));
 
-        let state: PageState = { byId: {}, ids: [] };
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      let state: PageState = { byId: {}, ids: [] };
 
-        animais.forEach((animalDoc) => {
-          const data = animalDoc.data();
-          if (animalDoc.data().usuarioId !== user?.uid) {
-            const pet = {
-                  id: animalDoc.id,
-                  nome: data.nome,
-                  porte: data.porte,
-                  idade: data.idade,
-          sexo: data.sexo,
-          fotos: data.fotos, 
-          vacinado: 'sim',
-          vermifugado: 'sim',
-          castrado: 'Não',
-          doencas: 'nenhuma',
-          interessados: data.interessados,
-          visivel: data.visivel,
-          temperamento: 'dócil'};
-          
-          if(pet.visivel){
+      snapshot.forEach((animalDoc) => {
+        const data = animalDoc.data();
+        
+        if (data.usuarioId !== user.uid) {
+          const pet = {
+            id: animalDoc.id,
+            nome: data.nome,
+            porte: data.porte,
+            idade: data.idade,
+            sexo: data.sexo,
+            fotos: data.fotos,
+            vacinado: 'sim',
+            vermifugado: 'sim',
+            castrado: 'Não',
+            doencas: 'nenhuma',
+            interessados: data.interessados,
+            visivel: data.visivel,
+            temperamento: 'dócil'
+          };
 
-          state.byId[animalDoc.id] = pet; 
-            state.ids.push(animalDoc.id);
-          }
-            
+        state.byId[animalDoc.id] = pet;
+        state.ids.push(animalDoc.id);
+        }
+      });
 
-          }
-
-        })
-
-        setPets(state);
-
-      } catch (e) {
-        console.error(e)
-      }
+      setPets(state);
+    });
 
 
 
-    }
-
-    fetchAnimais()
+    return () => unsubscribe();
 
   }, [user?.uid]);
 
