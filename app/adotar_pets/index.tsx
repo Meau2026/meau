@@ -5,7 +5,7 @@ import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 import { StatusBar } from 'expo-status-bar';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, where, onSnapshot } from 'firebase/firestore';
 import { getDownloadURL, ref } from 'firebase/storage';
 import React, { useEffect, useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -116,70 +116,49 @@ function AnimalList() {
     })();
   }, []);
 
-  useEffect(() => {
-    // Só busca se a localização do usuário já tiver sido encontrada
-    if (!userLocation) return;
+    if (!user?.uid) return;
 
-    const fetchAnimais = async () => {
-      try {
-        const animaisSnap = await getDocs(collection(db, "animais"));
-        let state: PageState = { byId: {}, ids: [] };
-        let arrayTemporario: Animal[] = [];
+    const animaisRef = collection(db, "animais");
+    
+    const q = query(animaisRef, where("visivel", "==", true));
 
-        animaisSnap.forEach((animalDoc) => {
-          const data = animalDoc.data();
-          
-          if (data.usuarioId !== user?.uid) {
-            let distanciaCalculada = 99999;
 
-            if (data.localizacao && typeof data.localizacao.latitude === 'number' && typeof data.localizacao.longitude === 'number') {
-              distanciaCalculada = calcularDistancia(
-                userLocation.lat, 
-                userLocation.lon, 
-                data.localizacao.latitude, 
-                data.localizacao.longitude
-              );
-            }
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      let state: PageState = { byId: {}, ids: [] };
 
-            const pet: Animal = {
-              id: animalDoc.id,
-              nome: data.nome || "Sem Nome",
-              porte: data.porte,
-              idade: data.idade,
-              sexo: data.sexo,
-              fotos: data.fotos,
-              vacinado: 'sim',
-              vermifugado: 'sim',
-              castrado: 'Não',
-              doencas: 'nenhuma',
-              interessados: data.interessados,
-              visivel: data.visivel,
-              temperamento: 'dócil',
-              localizacao: data.localizacao || { latitude: 0, longitude: 0 },
-              distanciaKm: distanciaCalculada
-            };
+      snapshot.forEach((animalDoc) => {
+        const data = animalDoc.data();
+        
+        if (data.usuarioId !== user.uid) {
+          const pet = {
+            id: animalDoc.id,
+            nome: data.nome,
+            porte: data.porte,
+            idade: data.idade,
+            sexo: data.sexo,
+            fotos: data.fotos,
+            vacinado: 'sim',
+            vermifugado: 'sim',
+            castrado: 'Não',
+            doencas: 'nenhuma',
+            interessados: data.interessados,
+            visivel: data.visivel,
+            temperamento: 'dócil'
+          };
 
-            if (pet.visivel) {
-              arrayTemporario.push(pet);
-            }
-          }
-        });
+        state.byId[animalDoc.id] = pet;
+        state.ids.push(animalDoc.id);
+        }
+      });
 
-        arrayTemporario.sort((a, b) => a.distanciaKm - b.distanciaKm);
-        arrayTemporario.forEach(pet => {
-          state.byId[pet.id] = pet;
-          state.ids.push(pet.id);
-        });
+      setPets(state);
+    });
 
-        setPets(state);
-      } catch (e) {
-        console.error("Erro ao processar e ordenar os animais:", e);
-      }
-    };
 
-    fetchAnimais();
 
-  }, [user?.uid, userLocation]);
+    return () => unsubscribe();
+
+  }, [user?.uid]);
 
   return (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.animal_list}>
