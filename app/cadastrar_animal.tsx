@@ -5,7 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { addDoc, arrayUnion, collection, doc, setDoc } from 'firebase/firestore';
+import { addDoc, arrayUnion, collection, doc, GeoPoint, setDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -167,11 +167,11 @@ export default function CadastroAnimal() {
 				requisitosAdocao: selectedAdoptionRequirements,
 				mesesAdocao: selectedAdoptionMonths,
 				visivel: true,
-        interessados: [],
-        doencas,
+				interessados: [],
+				doencas,
 				historia,
 				usuarioId: user.uid,
-				localizacao: location,
+				localizacao: location ? new GeoPoint(location.latitude, location.longitude) : null,
 
 			});
 
