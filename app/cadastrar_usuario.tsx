@@ -1,28 +1,29 @@
-import { db, storage, auth } from '@/firebaseConfig';
+import { auth, db, storage } from '@/firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, GeoPoint, setDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import MapView, { Marker, Region } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 
-import { Drawer } from 'expo-router/drawer';
-import { useNavigation } from 'expo-router';
 import { DrawerActions } from '@react-navigation/native';
+import { useNavigation } from 'expo-router';
+import { Drawer } from 'expo-router/drawer';
 
 
 
 export default function CadastroPessoal() {
 
-  const navigation = useNavigation();  
-	
- 	const router = useRouter();
+	const navigation = useNavigation();
+
+	const router = useRouter();
 	const [nome, setNome] = useState<string>('');
 	const [idade, setIdade] = useState<string>('');
 	const [email, setEmail] = useState<string>('');
@@ -36,6 +37,9 @@ export default function CadastroPessoal() {
 	const [image, setImage] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 
+
+	const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+	const [region, setRegion] = useState<Region | null>(null);
 
 	const handleAddPhoto = async () => {
 		const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
@@ -116,6 +120,7 @@ export default function CadastroPessoal() {
 				telefone,
 				username,
 				fotoUrl: imageUrl,
+				localizacao: location ? new GeoPoint(location.latitude, location.longitude) : null,
 				createdAt: new Date(),
 			});
 
@@ -135,21 +140,21 @@ export default function CadastroPessoal() {
 	return (
 		<SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
 
-    
-      <Drawer.Screen
-          options = {{
-           headerShown: false
-            }}
-          />
+
+			<Drawer.Screen
+				options={{
+					headerShown: false
+				}}
+			/>
 
 			<StatusBar style="dark" backgroundColor="#88C9BF" translucent={false} />
 
 			<View style={styles.header}>
-				<TouchableOpacity onPress={() => {navigation.dispatch(DrawerActions.openDrawer());}}>
-          <Ionicons name="menu" size={24} color="#575757" />
-        </TouchableOpacity>
-				
-        <Text style={styles.headerText}>Cadastro Pessoal</Text>
+				<TouchableOpacity onPress={() => { navigation.dispatch(DrawerActions.openDrawer()); }}>
+					<Ionicons name="menu" size={24} color="#575757" />
+				</TouchableOpacity>
+
+				<Text style={styles.headerText}>Cadastro Pessoal</Text>
 			</View>
 
 			<ScrollView contentContainerStyle={styles.scrollContent}>
@@ -184,6 +189,28 @@ export default function CadastroPessoal() {
 						</>
 					)}
 				</TouchableOpacity>
+
+				<Text style={styles.sectionTitle}>SUA LOCALIZAÇÃO</Text>
+				{region ? (
+					<View style={styles.mapContainer}>
+						<MapView
+							style={styles.map}
+							initialRegion={region}
+							onPress={(e) => setLocation(e.nativeEvent.coordinate)}
+						>
+							{location && (
+								<Marker
+									coordinate={location}
+									draggable
+									onDragEnd={(e) => setLocation(e.nativeEvent.coordinate)}
+								/>
+							)}
+						</MapView>
+						<Text style={styles.mapHint}>Toque no mapa ou arraste o marcador para o seu endereço</Text>
+					</View>
+				) : (
+					<ActivityIndicator size="small" color="#88C9BF" style={{ marginBottom: 20 }} />
+				)}
 
 				<TouchableOpacity style={styles.button} onPress={handleCadastro} disabled={loading}>
 					{loading ? <ActivityIndicator color="#434343" /> : <Text style={styles.buttonText}>FAZER CADASTRO</Text>}
@@ -224,5 +251,23 @@ const styles = StyleSheet.create({
 		justifyContent: 'center', alignItems: 'center', borderRadius: 2,
 		marginBottom: 24, elevation: 2
 	},
-	buttonText: { color: '#434343', fontWeight: 'bold' }
+	buttonText: { color: '#434343', fontWeight: 'bold' },
+	mapContainer: {
+		width: '100%',
+		marginBottom: 20,
+		alignItems: 'center',
+	},
+	map: {
+		width: '100%',
+		height: 250,
+		borderRadius: 4,
+		borderWidth: 1,
+		borderColor: '#E6E7E8',
+	},
+	mapHint: {
+		fontSize: 12,
+		color: '#757575',
+		marginTop: 8,
+		textAlign: 'center',
+	},
 });

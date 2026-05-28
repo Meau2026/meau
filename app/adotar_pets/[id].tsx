@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -12,6 +13,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import MapView, { Circle, Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Expo e Roteamento
@@ -20,7 +22,7 @@ import { Drawer } from 'expo-router/drawer';
 
 // Firebase Config e Funções
 import { db, storage } from '@/firebaseConfig';
-import { addDoc, arrayUnion, collection, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { addDoc, arrayUnion, collection, doc, GeoPoint, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { getDownloadURL, ref } from 'firebase/storage';
 
 
@@ -45,6 +47,7 @@ interface Animal {
   temperamento: string;
 
   usuarioId: string;
+  localizacao?: GeoPoint | null;
 }
 
 
@@ -63,7 +66,15 @@ function PetInfo({label, info}){
 
 
 
-function Pet( {pet, onPressAdotar} : {pet: Animal; onPressAdotar: () => Promise<void>} ){
+function Pet({ 
+  pet, 
+  onPressAdotar, 
+  userLocation 
+}: { 
+  pet: Animal; 
+  onPressAdotar: () => Promise<void>; 
+  userLocation: { latitude: number; longitude: number } | null 
+}) {
   const [urls, setUrls] = useState<string[]>([]);
   const [loadingPhotos, setLoadingPhotos] = useState(true);
  
@@ -128,7 +139,34 @@ function Pet( {pet, onPressAdotar} : {pet: Animal; onPressAdotar: () => Promise<
     <Separator/>
     
     <View style={styles.info_row}>
-    <PetInfo label="LOCALIZAÇÃO" info={"ainda n pegamos"}/>
+      <View style={styles.mapSection}>
+        <Text style={styles.info_label}>LOCALIZAÇÃO DO ANIMAL (REGIÃO)</Text>
+        {pet.localizacao ? (
+          <MapView
+            style={styles.miniMap}
+            initialRegion={{
+              latitude: pet.localizacao.latitude,
+              longitude: pet.localizacao.longitude,
+              latitudeDelta: 0.015,
+              longitudeDelta: 0.015,
+            }}
+            scrollEnabled={true}
+            zoomEnabled={true}
+          >
+            <Circle
+              center={{ latitude: pet.localizacao.latitude, longitude: pet.localizacao.longitude }}
+              radius={1000} // Raio de 400 metros para representar a região
+              fillColor="rgba(254, 211, 88, 0.3)"
+              strokeColor="#F7A800"
+            />
+            {userLocation && (
+              <Marker coordinate={userLocation} title="Você está aqui" pinColor="blue" />
+            )}
+          </MapView>
+        ) : (
+          <Text style={styles.info_text}>Localização não informada</Text>
+        )}
+      </View>
     </View>
   <Separator/>
     <View style={styles.info_row}>
@@ -187,6 +225,20 @@ export default function MeuPet() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { user } = useAuth();
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        let loc = await Location.getCurrentPositionAsync({});
+        setUserLocation({
+          latitude: loc.coords.latitude,
+          longitude: loc.coords.longitude,
+        });
+      }
+    })();
+  }, []);
 
   const handleCreateChat = async () => {
     if (!pet) {
@@ -257,6 +309,7 @@ export default function MeuPet() {
           temperamento: 'dócil',
 
           usuarioId: data.usuarioId,
+          localizacao: data.localizacao,
 
         });
         setLoading(false);
@@ -302,7 +355,7 @@ export default function MeuPet() {
     }}
   />
   
-  <Pet pet={pet} onPressAdotar={handleCreateChat}/> 
+  <Pet pet={pet} onPressAdotar={handleCreateChat} userLocation={userLocation} /> 
 
   </SafeAreaView >
   );
@@ -391,5 +444,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#434343'
     },
-
+  mapSection: {
+    margin: 16,
+    width: '90%',
+  },
+  miniMap: {
+    width: '100%',
+    height: 150,
+    marginTop: 8,
+    borderRadius: 4,
+    borderWidth: 0.5,
+    borderColor: '#e0e0e0',
+  },
 })

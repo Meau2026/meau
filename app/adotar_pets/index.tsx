@@ -1,17 +1,15 @@
-
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-import { SafeAreaView } from 'react-native-safe-area-context';
-
 import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
+import { useRouter } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 import { StatusBar } from 'expo-status-bar';
 import { collection, getDocs, query, where, onSnapshot } from 'firebase/firestore';
 import { getDownloadURL, ref } from 'firebase/storage';
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'expo-router';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 interface Animal {
@@ -21,7 +19,6 @@ interface Animal {
   idade: string;
   sexo: string;
   fotos: string[];
-
   vacinado: string;
   vermifugado: string;
   castrado: string;
@@ -29,50 +26,58 @@ interface Animal {
   visivel: boolean;
   interessados: string[];
   temperamento: string;
+  localizacao: { latitude: number; longitude: number }; 
+  distanciaKm: number;   
 }
-
-
-
 
 interface PageState {
   byId: { [key: string]: Animal };
   ids: string[];
-};
+}
+
+function calcularDistancia(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2); 
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
+  return R * c; 
+}
 
 function AnimalEntry({ animal }: { animal: Animal }) {
-
   const [url, setUrl] = useState<string | null>(null);
   const router = useRouter();
-  useEffect(() => {
 
+  useEffect(() => {
     getDownloadURL(ref(storage, animal.fotos[0]))
       .then((url) => setUrl(url))
       .catch((e) => console.error(e));
   }, [animal]);
 
-  return (
+  const textoDistancia = animal.distanciaKm !== 99999 
+    ? `A ${animal.distanciaKm.toFixed(1)} km de distância` 
+    : 'Localização não informada';
 
+  return (
     <View style={styles.pet_frame}>
       <View style={styles.pet_header}>
         <Text style={styles.pet_nome}>
           {animal.nome}
         </Text>
-
         <Ionicons name="heart-outline" size={24} color='#434343' />
-
       </View>
 
       <TouchableOpacity onPress={()=>{
         router.push({ pathname:`/adotar_pets/${animal.id}`, params: {petData: JSON.stringify(animal)} });
-    }}>
-
-
+      }}>
         <Image
-          source={{ uri: url }} s
+          source={{ uri: url }}
           style={styles.pet_foto}
         />
-
       </TouchableOpacity>
+      
       <View style={{ justifyContent: 'center', alignItems: 'center', flex: 1 }}>
         <View style={{ width: '80%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={styles.pet_info_text}> {animal.sexo} </Text>
@@ -80,20 +85,36 @@ function AnimalEntry({ animal }: { animal: Animal }) {
           <Text style={styles.pet_info_text}>{animal.porte} </Text>
         </View>
         <View>
-          <Text style={styles.pet_info_text}> LOCAL PLACEHOLDER </Text>
+          <Text style={[styles.pet_info_text, { color: '#88c9bf', fontWeight: 'bold' }]}> 
+            {textoDistancia} 
+          </Text>
         </View>
       </View>
     </View>
-
   );
 }
 
 function AnimalList() {
   const { user } = useAuth();
-
   const [pets, setPets] = useState<PageState>({ byId: {}, ids: [] });
+  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
 
   useEffect(() => {
+    (async () => {
+      try {
+        let { status } = await Location.getForegroundPermissionsAsync();
+        if (status === 'granted') {
+          let location = await Location.getCurrentPositionAsync({});
+          setUserLocation({
+            lat: location.coords.latitude,
+            lon: location.coords.longitude,
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao obter localização do usuário:", error);
+      }
+    })();
+  }, []);
 
     if (!user?.uid) return;
 
@@ -143,16 +164,11 @@ function AnimalList() {
     <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.animal_list}>
       {
         pets.ids.map((id) => (
-
           <AnimalEntry key={id} animal={pets.byId[id]} />
         ))
       }
     </ScrollView>
-
   );
-
-
-
 }
 
 
