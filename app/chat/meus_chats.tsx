@@ -5,7 +5,7 @@ import { DrawerNavigationProp } from '@react-navigation/drawer';
 import { useNavigation } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
-import { collection, doc, getDoc, getDocs, or, query, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, or, query, where,onSnapshot } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -25,6 +25,7 @@ interface ChatMessage {
   ultimaMensagem: string;
   horario: string;
   foto: string; 
+  timestamp: number;
 }
 
 export default function ChatScreen() {
@@ -35,14 +36,12 @@ export default function ChatScreen() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchChats = async () => {
-      if (!user) {
+    if (!user) {
         setLoading(false);
         return;
       }
 
-      try {
-        const chatsRef = collection(db, 'chats');
+    const chatsRef = collection(db, 'chats');
         const q = query(
           chatsRef,
           or(
@@ -51,44 +50,56 @@ export default function ChatScreen() {
           )
         );
 
-        const querySnapshot = await getDocs(q);
-        const listaChats: ChatMessage[] = [];
+        // atualiza lista de chats e mensagem mais recente (espero)
+        const unsubscribe = onSnapshot(q, async (querySnapshot) =>{
+          try{
+            const chatPromises = querySnapshot.docs.map(async (chatDoc) =>{
+              const data = chatDoc.data();
+              const outroId = data.donoId === user.uid? data.interessadoId : data.donoId;
 
-        for (const chatDoc of querySnapshot.docs) {
-          const chatData = chatDoc.data();
+              //busca em paralelo no bd
+              const [userDocSnap, animalDocSnap] = await Promise.all([
+                getDoc(doc(db, 'users', outroId)),
+                getDoc(doc(db, 'animais', data.animalId))
+              ]);
+              
+              const nomeUsuario = userDocSnap.exists() ? userDocSnap.data().nome?.toUpperCase() : 'USUÁRIO';
+              const nomeAnimal = animalDocSnap.exists() ? animalDocSnap.data().nome?.toUpperCase() : 'ANIMAL';
 
-          // Identifica quem é a outra pessoa na conversa
-          const outroUsuarioID = chatData.donoId === user.uid ? chatData.interessadoId : chatData.donoId;
+              const dataAtualizacao = data.createdAt?.toDate() || new Date();
+            
+              return {
+                id: chatDoc.id,
+                nomeUser: nomeUsuario,
+                nomeItem: `${nomeUsuario} | ${nomeAnimal}`,
+                ultimaMensagem: data.ultimaMensagem || 'Inicie a conversa...',
+                horario: dataAtualizacao.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                foto: userDocSnap.exists() ? userDocSnap.data().fotoUrl : 'https://placehold.co/150.png',
+                timestamp: dataAtualizacao.getTime(),               };        
 
-          // Busca os dados do outro usuário de forma paralela no Firestore
-          const userDocSnap = await getDoc(doc(db, 'users', outroUsuarioID));
-          const animalDocSnap = await getDoc(doc(db, 'animais', chatData.animalId));
-          const nomeUsuario = userDocSnap.exists() ? userDocSnap.data().nome?.toUpperCase() : 'USUÁRIO';
-          const nomeAnimal = animalDocSnap.exists() ? animalDocSnap.data().nome?.toUpperCase() : 'ANIMAL';
-          const horarioFormatado = chatData.updatedAt?.toDate 
-            ? chatData.updatedAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            : '12:00';
 
-          listaChats.push({
-            id: chatDoc.id,
-            nomeUser: nomeUsuario,
-            nomeItem: `${nomeUsuario} | ${nomeAnimal}`,
-            ultimaMensagem: chatData.ultimaMensagem || 'Inicie a conversa...',
-            horario: horarioFormatado,
-            foto: userDocSnap.exists() ? userDocSnap.data().fotoUrl : 'https://placehold.co/150.png', 
-          });
+            })
+
+            const listaChats = await Promise.all(chatPromises)
+            
+            // chat ordenado por mensagem mais recente
+            listaChats.sort((a, b) => b.timestamp - a.timestamp);
+
+            setChats(listaChats);
+
+          } 
+        catch (error) {
+          console.error("Erro ao buscar conversas: ", error);
+        } 
+        finally {
+          setLoading(false);
         }
+        }); //ubsub
 
-        setChats(listaChats);
-      } catch (error) {
-        console.error("Erro ao buscar conversas: ", error);
-      } finally {
-        setLoading(false);
-      }
-    };
 
-    fetchChats();
-  }, [user]);
+       
+      return () => unsubscribe(); 
+    }, [user]);
 
   const handleChatPress = (item: ChatMessage ) => {
     router.push({
