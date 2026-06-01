@@ -102,7 +102,7 @@ function AnimalList() {
   useEffect(() => {
     (async () => {
       try {
-        let { status } = await Location.getForegroundPermissionsAsync();
+       let { status } = await Location.requestForegroundPermissionsAsync(); 
         if (status === 'granted') {
           let location = await Location.getCurrentPositionAsync({});
           setUserLocation({
@@ -116,23 +116,41 @@ function AnimalList() {
     })();
   }, []);
 
-    if (!user?.uid) return;
+
+ useEffect(() => {
+    // Só abre a conexão com o banco se o usuário E a localização já estiverem carregados
+    if (!user?.uid || !userLocation) return;
 
     const animaisRef = collection(db, "animais");
     
+    // Otimização mantida: o servidor só envia os pets que estão visíveis
     const q = query(animaisRef, where("visivel", "==", true));
-
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       let state: PageState = { byId: {}, ids: [] };
+      let arrayTemporario: Animal[] = [];
 
       snapshot.forEach((animalDoc) => {
         const data = animalDoc.data();
+
         
         if (data.usuarioId !== user.uid) {
-          const pet = {
+          
+         
+          let distanciaCalculada = 99999;
+          if (data.localizacao && typeof data.localizacao.latitude === 'number' && typeof data.localizacao.longitude === 'number') {
+            distanciaCalculada = calcularDistancia(
+              userLocation.lat,
+              userLocation.lon,
+              data.localizacao.latitude,
+              data.localizacao.longitude
+            );
+          }
+
+          
+          const pet: Animal = {
             id: animalDoc.id,
-            nome: data.nome,
+            nome: data.nome || "Sem Nome",
             porte: data.porte,
             idade: data.idade,
             sexo: data.sexo,
@@ -143,23 +161,32 @@ function AnimalList() {
             doencas: 'nenhuma',
             interessados: data.interessados,
             visivel: data.visivel,
-            temperamento: 'dócil'
+            temperamento: 'dócil',
+            localizacao: data.localizacao || { latitude: 0, longitude: 0 },
+            distanciaKm: distanciaCalculada
           };
 
-        state.byId[animalDoc.id] = pet;
-        state.ids.push(animalDoc.id);
+          arrayTemporario.push(pet);
         }
+      });
+
+      
+      arrayTemporario.sort((a, b) => a.distanciaKm - b.distanciaKm);
+
+      
+      arrayTemporario.forEach(pet => {
+        state.byId[pet.id] = pet;
+        state.ids.push(pet.id);
       });
 
       setPets(state);
     });
 
-
-
+  
     return () => unsubscribe();
 
-  }, [user?.uid]);
-
+  }, [user?.uid, userLocation]);
+  
   return (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.animal_list}>
       {
