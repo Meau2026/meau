@@ -81,6 +81,7 @@ export default function FireBaseTest() {
 				<TextInput
 					style={styles.input}
 					placeholder="Email"
+					placeholderTextColor="#bdbdbd"
           value={email}
           onChangeText={(email) => setEmail(email)}
 
@@ -88,6 +89,7 @@ export default function FireBaseTest() {
 				<TextInput
 					style={styles.input}
 					placeholder="Senha"
+					placeholderTextColor="#bdbdbd"
 					secureTextEntry={true}
           value={password}
           onChangeText={(password) => setPassword(password)}
