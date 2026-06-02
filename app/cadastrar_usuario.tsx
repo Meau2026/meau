@@ -6,9 +6,9 @@ import { StatusBar } from 'expo-status-bar';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, GeoPoint, setDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import MapView, { Marker, Region } from 'react-native-maps';
+import MapView, { Marker, Region, PROVIDER_GOOGLE } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 
@@ -17,7 +17,7 @@ import { DrawerActions } from '@react-navigation/native';
 import { useNavigation } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 
-
+import * as Location from 'expo-location';
 
 export default function CadastroPessoal() {
 
@@ -40,6 +40,58 @@ export default function CadastroPessoal() {
 
 	const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 	const [region, setRegion] = useState<Region | null>(null);
+
+
+  useEffect(() => {
+        (async () => {
+            try {
+                let { status } = await Location.requestForegroundPermissionsAsync();
+                
+                
+                const fallbackRegion = {
+                    latitude: -15.7975, 
+                    longitude: -47.8919,
+                    latitudeDelta: 0.05,
+                    longitudeDelta: 0.05,
+                };
+
+                if (status !== 'granted') {
+                    console.warn("Permissão de GPS negada pelo usuário.");
+                    setRegion(fallbackRegion);
+                    setLocation({ latitude: fallbackRegion.latitude, longitude: fallbackRegion.longitude });
+                    return;
+                }
+
+               
+                let currentLoc = await Location.getCurrentPositionAsync({
+                    accuracy: Location.Accuracy.Balanced,
+                    timeout: 5000 
+                });
+
+                const userRegion = {
+                    latitude: currentLoc.coords.latitude,
+                    longitude: currentLoc.coords.longitude,
+                    latitudeDelta: 0.05,
+                    longitudeDelta: 0.05,
+                };
+
+                
+                setRegion(userRegion);
+                setLocation({ latitude: userRegion.latitude, longitude: userRegion.longitude });
+
+            } catch (error) {
+                console.warn("O GPS falhou ou demorou muito. Usando fallback.", error);
+                const fallbackRegion = {
+                    latitude: -15.7975, 
+                    longitude: -47.8919,
+                    latitudeDelta: 0.05,
+                    longitudeDelta: 0.05,
+                };
+                setRegion(fallbackRegion);
+                setLocation({ latitude: fallbackRegion.latitude, longitude: fallbackRegion.longitude });
+            }
+        })();
+    }, []);
 
 	const handleAddPhoto = async () => {
 		const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
@@ -196,6 +248,7 @@ export default function CadastroPessoal() {
 				{region ? (
 					<View style={styles.mapContainer}>
 						<MapView
+              provider={PROVIDER_GOOGLE}
 							style={styles.map}
 							initialRegion={region}
 							onPress={(e) => setLocation(e.nativeEvent.coordinate)}
