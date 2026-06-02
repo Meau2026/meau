@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   },
   drawerHeader: {
     backgroundColor: '#88c9bf', 
-    height: 56,
+    
   },
   drawerTitle: {
     fontFamily: 'Roboto-Medium',
