@@ -8,7 +8,7 @@ import { doc, GeoPoint, setDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import MapView, { Marker, Region } from 'react-native-maps';
+import MapView, { Marker, Region, PROVIDER_GOOGLE } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 
@@ -194,6 +194,7 @@ export default function CadastroPessoal() {
 				{region ? (
 					<View style={styles.mapContainer}>
 						<MapView
+              provider={PROVIDER_GOOGLE}
 							style={styles.map}
 							initialRegion={region}
 							onPress={(e) => setLocation(e.nativeEvent.coordinate)}
