@@ -167,7 +167,7 @@ export default function Chat() {
     set_Loading(false);
     }); 
     return () => unsubscribe();
-  }, [chatInfo]);
+  }, [chatInfo, user?.uid]);
 
   const onSend = useCallback( async (messages = []) => {
     if (messages.length === 0) return;
@@ -228,12 +228,13 @@ export default function Chat() {
   />
 
     <GiftedChat
+      key={user?.uid}
       messages={messages}
       onSend={messages => onSend(messages)}
       user={userInfo}
       loadEarlier={false}
       renderBubble={(props) => <CustomBubble {...props} />}
-      renderAvatar={() => null}
+      renderAvatar={null}
       renderSend={(props) => <CustomSend {...props} />}
       renderInputToolbar={(props) => <CustomInputToolbar {...props} />}
       renderComposer={(props) => <CustomComposer {...props} />}
