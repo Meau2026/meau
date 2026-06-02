@@ -214,7 +214,7 @@ export default function CadastroAnimal() {
 				<Text style={styles.sectionText}>Adoção</Text>
 
 				<Text style={styles.sectionTitle}>NOME DO ANIMAL</Text>
-				<TextInput style={styles.input} placeholder="Nome do animal" value={nome} onChangeText={setNome} />
+				<TextInput style={styles.input} placeholder="Nome do animal" placeholderTextColor="#bdbdbd" value={nome} onChangeText={setNome} />
 
 				<Text style={styles.sectionTitle}>FOTOS DO ANIMAL</Text>
 				<TouchableOpacity style={styles.photoContainer} onPress={handleAddPhoto}>
@@ -371,7 +371,7 @@ export default function CadastroAnimal() {
 						</View>
 						<Text style={styles.radioText}>Doente</Text>
 					</TouchableOpacity>
-					<TextInput style={styles.input} placeholder="Doenças do animal" value={doencas} onChangeText={setDoencas} />
+					<TextInput style={styles.input} placeholder="Doenças do animal" placeholderTextColor="#bdbdbd" value={doencas} onChangeText={setDoencas} />
 				</View>
 
 				<Text style={styles.sectionTitle}>EXIGÊNCIAS PARA ADOÇÃO</Text>
@@ -447,7 +447,7 @@ export default function CadastroAnimal() {
 				</View>
 
 				<Text style={styles.sectionTitle}>SOBRE O ANIMAL</Text>
-				<TextInput style={styles.input} placeholder="Compartilhe a história do animal" value={historia} onChangeText={setHistoria} />
+				<TextInput style={styles.input} placeholder="Compartilhe a história do animal" placeholderTextColor="#bdbdbd" value={historia} onChangeText={setHistoria} />
 
 				<Text style={styles.sectionTitle}>LOCALIZAÇÃO DO ANIMAL</Text>
 				{region ? (

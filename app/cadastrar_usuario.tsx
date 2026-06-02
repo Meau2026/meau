@@ -165,18 +165,18 @@ export default function CadastroPessoal() {
 				</View>
 
 				<Text style={styles.sectionTitle}>INFORMAÇÕES PESSOAIS</Text>
-				<TextInput style={styles.input} placeholder="Nome completo" value={nome} onChangeText={setNome} />
-				<TextInput style={styles.input} placeholder="Idade" keyboardType="numeric" value={idade} onChangeText={setIdade} />
-				<TextInput style={styles.input} placeholder="E-mail" keyboardType="email-address" value={email} onChangeText={setEmail} />
-				<TextInput style={styles.input} placeholder="Estado" value={estado} onChangeText={setEstado} />
-				<TextInput style={styles.input} placeholder="Cidade" value={cidade} onChangeText={setCidade} />
-				<TextInput style={styles.input} placeholder="Endereço" value={endereco} onChangeText={setEndereco} />
-				<TextInput style={styles.input} placeholder="Telefone" keyboardType="phone-pad" value={telefone} onChangeText={setTelefone} />
+				<TextInput style={styles.input} placeholder="Nome completo" placeholderTextColor="#bdbdbd" value={nome} onChangeText={setNome} />
+				<TextInput style={styles.input} placeholder="Idade" placeholderTextColor="#bdbdbd" keyboardType="numeric" value={idade} onChangeText={setIdade} />
+				<TextInput style={styles.input} placeholder="E-mail" placeholderTextColor="#bdbdbd" keyboardType="email-address" value={email} onChangeText={setEmail} />
+				<TextInput style={styles.input} placeholder="Estado" placeholderTextColor="#bdbdbd" value={estado} onChangeText={setEstado} />
+				<TextInput style={styles.input} placeholder="Cidade" placeholderTextColor="#bdbdbd" value={cidade} onChangeText={setCidade} />
+				<TextInput style={styles.input} placeholder="Endereço" placeholderTextColor="#bdbdbd" value={endereco} onChangeText={setEndereco} />
+				<TextInput style={styles.input} placeholder="Telefone" placeholderTextColor="#bdbdbd" keyboardType="phone-pad" value={telefone} onChangeText={setTelefone} />
 
 				<Text style={styles.sectionTitle}>INFORMAÇÕES DE PERFIL</Text>
-				<TextInput style={styles.input} placeholder="Nome de usuário" value={username} onChangeText={setUsername} />
-				<TextInput style={styles.input} placeholder="Senha" secureTextEntry value={senha} onChangeText={setSenha} />
-				<TextInput style={styles.input} placeholder="Confirmação de senha" secureTextEntry value={confirmaSenha} onChangeText={setConfirmaSenha} />
+				<TextInput style={styles.input} placeholder="Nome de usuário" placeholderTextColor="#bdbdbd" value={username} onChangeText={setUsername} />
+				<TextInput style={styles.input} placeholder="Senha" placeholderTextColor="#bdbdbd" secureTextEntry value={senha} onChangeText={setSenha} />
+				<TextInput style={styles.input} placeholder="Confirmação de senha" placeholderTextColor="#bdbdbd" secureTextEntry value={confirmaSenha} onChangeText={setConfirmaSenha} />
 
 				<Text style={styles.sectionTitle}>FOTO DE PERFIL</Text>
 				<TouchableOpacity style={styles.photoContainer} onPress={handleAddPhoto}>
