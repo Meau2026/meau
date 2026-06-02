@@ -124,12 +124,6 @@ function Header(props: DrawerContentComponentProps) {
       <DrawerItem
         label='Chat'
         labelStyle={styles.text_entry}
-        onPress={() => navigate('chat/chat')}
-      />
-      <Separator />
-      <DrawerItem
-        label='Meus chats'
-        labelStyle={styles.text_entry}
         onPress={() => navigate('chat/meus_chats')}
       />
     </View>
