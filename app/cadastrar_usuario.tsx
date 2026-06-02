@@ -63,6 +63,7 @@ export default function CadastroPessoal() {
 
 	const pickFromCamera = async () => {
 		const result = await ImagePicker.launchCameraAsync({
+			mediaTypes: ImagePicker.MediaTypeOptions.Images,
 			allowsEditing: true,
 			quality: 0.5,
 		});
@@ -73,7 +74,8 @@ export default function CadastroPessoal() {
 	};
 
 	const pickFromGallery = async () => {
-		let result = await ImagePicker.launchImageLibraryAsync({
+		const result = await ImagePicker.launchImageLibraryAsync({
+			mediaTypes: ImagePicker.MediaTypeOptions.Images,
 			allowsEditing: true,
 			quality: 0.5,
 		});
