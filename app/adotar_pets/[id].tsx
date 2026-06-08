@@ -28,6 +28,7 @@ import { getDownloadURL, ref } from 'firebase/storage';
 
 import { useAuth } from '@/contexts/AuthContext';
 
+import {enviarNotificacaoPush } from '@/utils/enviarNotificacao';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -281,6 +282,24 @@ export default function MeuPet() {
       }, { merge: true });
 
       console.log('Chat criado com ID:', chatRef.id);
+
+
+      // envia notificacao para o outro user (enviando pro proprio user pra teste)
+      
+    const userDoc = await getDoc(doc(db, 'users', user?.uid));
+
+    if (userDoc.exists()) {
+      const userData = userDoc.data(); 
+        if (userData.expoPushToken) {
+        
+          await enviarNotificacaoPush(
+            userData.expoPushToken, 
+            "teste", 
+            "testando", 
+            { chatId: chatRef.id } )
+      }
+    }
+
     } catch (e) {
       console.error('Erro ao criar chat:', e);
     }

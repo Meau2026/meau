@@ -21,7 +21,7 @@ import React, { useEffect, useState } from 'react';
 
 import { auth, db, storage } from '@/firebaseConfig';
 import { signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getDownloadURL, ref } from 'firebase/storage';
 
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
@@ -32,6 +32,12 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 
 import { Courgette_400Regular } from '@expo-google-fonts/courgette';
 import { Roboto_400Regular, Roboto_500Medium, useFonts } from '@expo-google-fonts/roboto';
+
+
+//notificacoes
+
+import { registerPushNotification } from '@/hooks/use-notifications';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 interface UserInfo {
@@ -360,7 +366,32 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
  function RoutingControl() {
 
   const { user , loading } = useAuth();
-  
+    useEffect(() =>{
+   
+    if (!user?.uid) return;
+   
+    async function setupNofitications(){
+      const token = await registerPushNotification();
+      
+      if(token){
+   
+       const tokenSalvoLocalmente = await AsyncStorage.getItem('expoPushToken');
+       // se o token ja tiver no storage ele ta no firebase, n precisa atualizar
+       if (token !== tokenSalvoLocalmente) {
+            const userRef = doc(db, 'users', user.uid);
+            await updateDoc(userRef, {
+              expoPushToken: token
+            });
+
+          await AsyncStorage.setItem('expoPushToken', token);
+          }   
+    
+      }
+    }
+
+    setupNofitications();
+  }, [user?.uid]);
+
 
  
   if(loading) {
@@ -391,6 +422,7 @@ export default function RootLayout(){
 
   const colorScheme = useColorScheme();
 
+
   const [loaded, error] = useFonts({
     'Roboto-Regular': Roboto_400Regular,
     'Roboto-Medium' : Roboto_500Medium,
@@ -402,6 +434,7 @@ export default function RootLayout(){
       SplashScreen.hideAsync();
     }
   }, [loaded, error]);
+
 
   if (!loaded && !error) {
     return null;
