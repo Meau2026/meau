@@ -6,7 +6,7 @@ export default {
     slug: "meau",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/images/icon.png",
+    icon: "./assets/images/Meau_Icone.png",
     scheme: "meau",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
@@ -19,10 +19,8 @@ export default {
     },
     android: {
       adaptiveIcon: {
-        backgroundColor: "#E6F4FE",
-        foregroundImage: "./assets/images/android-icon-foreground.png",
-        backgroundImage: "./assets/images/android-icon-background.png",
-        monochromeImage: "./assets/images/android-icon-monochrome.png"
+        foregroundImage: "./assets/images/Meau_Icone.png",
+        backgroundColor: "#ffd358"
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
@@ -49,12 +47,12 @@ export default {
       [
         "expo-splash-screen",
         {
-          image: "./assets/images/splash-icon.png",
+          image: "./assets/images/Meau_Icone.png",
           imageWidth: 200,
           resizeMode: "contain",
-          backgroundColor: "#ffffff",
+          backgroundColor: "#ffd358",
           dark: {
-            backgroundColor: "#000000"
+            backgroundColor: "#ffd358"
           }
         }
       ],
