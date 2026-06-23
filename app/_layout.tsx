@@ -377,12 +377,14 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
    
        const tokenSalvoLocalmente = await AsyncStorage.getItem('expoPushToken');
        // se o token ja tiver no storage ele ta no firebase, n precisa atualizar
-       if (token !== tokenSalvoLocalmente) {
-            const userRef = doc(db, 'users', user.uid);
-            await updateDoc(userRef, {
+       
+        const userRef = doc(db, 'users', user.uid);
+        await updateDoc(userRef, {
               expoPushToken: token
             });
 
+       if (token !== tokenSalvoLocalmente) {
+            
           await AsyncStorage.setItem('expoPushToken', token);
           }   
     
