@@ -4,7 +4,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
-
+import { router } from 'expo-router';
 import {
   DrawerContentComponentProps,
   DrawerItem
@@ -18,7 +18,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect, useState } from 'react';
-
+import * as Notifications from 'expo-notifications';
+import { useLastNotificationResponse} from 'expo-notifications';
 import { auth, db, storage } from '@/firebaseConfig';
 import { signOut } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -347,6 +348,7 @@ function LogoutButton(props: DrawerContentComponentProps) {
 
 function CustomDrawerContent(props: DrawerContentComponentProps) {
 
+
   return (
 
 
@@ -366,6 +368,9 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
  function RoutingControl() {
 
   const { user , loading } = useAuth();
+const lastNotificationResponse = useLastNotificationResponse();
+
+  //cadastra o user pra receber notificacao  
     useEffect(() =>{
    
     if (!user?.uid) return;
@@ -377,12 +382,14 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
    
        const tokenSalvoLocalmente = await AsyncStorage.getItem('expoPushToken');
        // se o token ja tiver no storage ele ta no firebase, n precisa atualizar
-       if (token !== tokenSalvoLocalmente) {
-            const userRef = doc(db, 'users', user.uid);
-            await updateDoc(userRef, {
+       
+        const userRef = doc(db, 'users', user.uid);
+        await updateDoc(userRef, {
               expoPushToken: token
             });
 
+       if (token !== tokenSalvoLocalmente) {
+            
           await AsyncStorage.setItem('expoPushToken', token);
           }   
     
@@ -393,6 +400,70 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
   }, [user?.uid]);
 
 
+// pro botao da notificacao de adocao levar pro chat
+useEffect(() => {
+    // Se o app abriu normalmente (sem clicar em notificação), ignora e sai.
+    if (!lastNotificationResponse) return;
+
+    // Se abriu por notificação, rodamos a lógica assíncrona
+    const processarNotificacao = async () => {
+      const actionIdentifier = lastNotificationResponse.actionIdentifier;
+      const chatId = lastNotificationResponse.notification.request.content.data.chatId;
+
+      if (!chatId) return;
+
+      try {
+        const chatRef = doc(db, 'chats', chatId);
+
+        if (actionIdentifier === 'ACCEPT_ACTION') {
+          console.log("Usuário ACEITOU o chat!");
+          await updateDoc(chatRef, { status: '1' });
+          
+          const chatSnap = await getDoc(chatRef);
+          
+          if (chatSnap.exists()) {
+            const chatData = chatSnap.data();
+            const outroId = chatData.interessadoId;
+
+            const [userDocSnap, animalDocSnap] = await Promise.all([
+              getDoc(doc(db, 'users', outroId)),
+              getDoc(doc(db, 'animais', chatData.animalId))
+            ]);
+
+            const nomeUsuario = userDocSnap.exists() ? userDocSnap.data().nome?.toUpperCase() : 'USUÁRIO';
+            const nomeAnimal = animalDocSnap.exists() ? animalDocSnap.data().nome?.toUpperCase() : 'ANIMAL';
+            const dataAtualizacao = chatData.createdAt?.toDate() || new Date();
+
+            const chatItem = {
+              id: chatId,
+              nomeUser: nomeUsuario,
+              nomeItem: `${nomeUsuario} | ${nomeAnimal}`,
+              ultimaMensagem: chatData.ultimaMensagem || 'Inicie a conversa...',
+              horario: dataAtualizacao.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              foto: userDocSnap.exists() ? userDocSnap.data().fotoUrl : 'https://placehold.co/150.png',
+              timestamp: dataAtualizacao.getTime(),
+            };
+
+            // Redireciona com os dados montados
+            router.push({
+              pathname: '/chat/chat', 
+              params: { chatInfo: JSON.stringify(chatItem) }
+            });
+          } 
+          
+        } else if (actionIdentifier === 'REJECT_ACTION') {
+          console.log("Usuário REJEITOU o chat!");
+          await updateDoc(chatRef, { status: 'rejected' });
+        }
+      } catch (error) {
+        console.error("Erro ao atualizar status do chat:", error);
+      }
+    };
+
+    // Executa a função 
+    processarNotificacao();
+
+  }, [lastNotificationResponse]); 
  
   if(loading) {
     return(
