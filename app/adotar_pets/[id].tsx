@@ -268,10 +268,10 @@ export default function MeuPet() {
       );
       const querySnapshot = await getDocs(q);
       // chat ja existe
-      if (!querySnapshot.empty) {
-        alert("Você já enviou um pedido!");
-        return;
-      }
+      //if (!querySnapshot.empty) {
+      //  alert("Você já enviou um pedido!");
+      //  return;
+      //}
 
 
       const chatRef = await addDoc(collection(db, 'chats'), {
