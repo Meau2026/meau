@@ -14,7 +14,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 
 
 
-export default function PetRemovido(){
+export default function ProcessoFinalizado(){
   const router = useRouter();
   const { petName } = useLocalSearchParams();
   return (
@@ -22,28 +22,29 @@ export default function PetRemovido(){
     <Drawer.Screen
     options = {{
       headerTintColor: '#434343',
-      headerTitle: '  Remover Pet',
+      headerTitle: '  Finalizar processo',
       headerStyle: styles.drawer_header,
     }} />
    
 
     <View style={styles.text_container}>
-      <Text style={styles.text_pronto}>Pronto!</Text>
+      <Text style={styles.text_pronto}>Oba!</Text>
       <View>
-        <Text style={styles.text_info}>{`O ${petName} foi removido da nossa lista com sucesso!`}</Text>
+        <Text style={styles.text_info}>
+        Ficamos muito felizes com o sucesso 
+        do seu processo! Esperamos que o 
+        bichinho esteja curtindo muito essa
+        nova experiência!
+        
+        </Text>
       
         <Text style={styles.text_info}> 
-            Porém, as conversas relacionadas à ele
-            serão mantidas para o caso de você
-            desejar manter contato. Caso deseje
-            apagá-las, você pode realizar esta ação
-            nas configurações no chat dos
-            usuários relacionados à este pet.
+        {`Agora, que tal compartilhar a história do ${petName} com todos os outros membros do Meau?`}        
         </Text>
       </View>
     </View>
-    <TouchableOpacity style={styles.button} onPress={() => {router.navigate('/meus_pets');}}>
-      <Text>VOLTAR À MEUS PETS</Text>
+    <TouchableOpacity style={styles.button} onPress={() => {router.navigate('/finalizar_processo/index');}}>
+      <Text>COMPARTILHAR HISTÓRIA</Text>
     </TouchableOpacity>
 
    
@@ -85,7 +86,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: 'Roboto-Regular',
     fontSize: 14,
-    color: '#757575'
+    color: '#757575',
+    marginBottom:24
 
   },
   button:{

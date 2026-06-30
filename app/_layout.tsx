@@ -194,12 +194,26 @@ function Atalhos(props: DrawerContentComponentProps) {
 
         onPress={() => navigate('adotar_pets/index')}
       />
+
+  { user && <>
+       <Separator />
+      <DrawerItem
+        label='Finalizar processo'
+        labelStyle={styles.text_entry}
+
+        onPress={() => navigate('finalizar_processo/index')}
+      />
+      
+      </>
+    }
+ 
       <Separator />
       <DrawerItem
         label='Pets no mapa'
         labelStyle={styles.text_entry}
         onPress={() => navigate('mapa_panoramico')}
       />
+
     </View>
   );
 
