@@ -8,7 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 
 
 import { Drawer } from 'expo-router/drawer';
-import { useNavigation } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { DrawerActions } from '@react-navigation/native';
 
 
@@ -26,18 +26,22 @@ export default function FireBaseTest() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const navigation = useNavigation();  
+  const navigation = useNavigation();
+  const router = useRouter();
 
 
   const singIn = async () => {
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password)
-      navigation.goBack(); 
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      navigation.goBack();
     } catch (e) {
-      console.log(e)
-      Alert.alert(`deu ruim: ${e.message}`)
+      console.log(e);
+      if (e instanceof Error) {
+        Alert.alert(`deu ruim: ${e.message}`);
+      } else {
+        Alert.alert('deu ruim');
+      }
     }
-
   }
 
   const signUp = async () => {
@@ -102,7 +106,7 @@ export default function FireBaseTest() {
 				</TouchableOpacity>
 
 		  <TouchableOpacity style={[styles.button, styles.button_cadastro]}
-          onPress={() => {navigation.navigate('cadastrar_usuario')}}
+          onPress={() => {router.push('/cadastrar_usuario')}}
         >
 					<Text>CRIAR CONTA </Text>
 				</TouchableOpacity>

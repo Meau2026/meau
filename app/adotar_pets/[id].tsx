@@ -13,7 +13,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import MapView, { Circle, Marker } from 'react-native-maps';
+import MapView, { Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Expo e Roteamento
@@ -28,7 +28,7 @@ import { getDownloadURL, ref } from 'firebase/storage';
 
 import { useAuth } from '@/contexts/AuthContext';
 
-import {enviarNotificacaoPush } from '@/utils/enviarNotificacao';
+import { enviarNotificacaoPush } from '@/utils/enviarNotificacao';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -40,12 +40,12 @@ interface Animal {
   sexo: string;
   fotos: string[];
 
-  vacinado: string;
-  vermifugado: string;
-  castrado: string;
+  saude: string[];
   doencas: string;
-
-  temperamento: string;
+  temperamento: string[];
+  requisitosAdocao: string[];
+  mesesAdocao: string[];
+  historia: string;
 
   usuarioId: string;
   localizacao?: GeoPoint | null;
@@ -54,7 +54,7 @@ interface Animal {
 
 const Separator = () => (<View style={styles.separator} />);
 
-function PetInfo({label, info}){
+function PetInfo({ label, info }: { label: string; info: string }) {
 
   return(
   <View style={styles.info_container}>
@@ -144,6 +144,7 @@ function Pet({
         <Text style={styles.info_label}>LOCALIZAÇÃO DO ANIMAL (REGIÃO)</Text>
         {pet.localizacao ? (
           <MapView
+            provider={PROVIDER_GOOGLE}
             style={styles.miniMap}
             initialRegion={{
               latitude: pet.localizacao.latitude,
@@ -171,36 +172,43 @@ function Pet({
     </View>
   <Separator/>
     <View style={styles.info_row}>
-    <PetInfo label="CASTRADO" info={pet.castrado}/>
-    <PetInfo label="VERMIFUGADO" info={pet.vermifugado}/>
-
+      <PetInfo label="CASTRADO" info={pet.saude?.includes('Castrado') ? 'Sim' : 'Não'}/>
+      <PetInfo label="VERMIFUGADO" info={pet.saude?.includes('Vermifugado') ? 'Sim' : 'Não'}/>
     </View>
-      <Separator/>
+    <Separator/>
     <View style={styles.info_row}>
-    <PetInfo label="VACINADO" info={pet.vacinado}/>
-    <PetInfo label="DOENCAS" info={pet.doencas}/>
+      <PetInfo label="VACINADO" info={pet.saude?.includes('Vacinado') ? 'Sim' : 'Não'}/>
+      <PetInfo label="DOENCAS" info={pet.saude?.includes('Doente') ? (pet.doencas || 'Não especificado') : 'Nenhuma'}/>
     </View>
-      <Separator/>
+    <Separator/>
     <View style={styles.info_row}>
-    
-      <PetInfo label="TEMPERAMENTO" info={pet.temperamento}/>
+      <PetInfo 
+        label="TEMPERAMENTO" 
+        info={pet.temperamento && pet.temperamento.length > 0 ? pet.temperamento.join(', ') : 'Não informado'}
+      />
     </View>
-      <Separator/>
+    <Separator/>
     <View style={styles.info_row}>
-    <PetInfo label={`O ${pet.nome} PRECISA DE `} info="Alimento"/>
-
+      <PetInfo 
+        label="EXIGÊNCIAS DO DOADOR" 
+        info={
+          pet.requisitosAdocao && pet.requisitosAdocao.length > 0 
+            ? pet.requisitosAdocao.map(req => {
+                if (req === 'Acompanhamento pós adoção' && pet.mesesAdocao && pet.mesesAdocao.length > 0) {
+                  return `${req} (por ${pet.mesesAdocao.join(', ')})`;
+                }
+                return req;
+              }).join(', ')
+            : 'Nenhuma'
+        }
+      />
     </View>
-      <Separator/>
-    <View style={styles.info_row}>
-    <PetInfo label="EXIGÊNCIAS DO DOADOR" info="auxílio financeiro com
-alimentação"/>
-
-    </View>
-     <Separator/>
-     <View>
-     <PetInfo label={`MAIS SOBRE O ${pet.nome}`} info="Adora caminhadas e se dá muito bem com
-crianças. Tem muito medo de raios e chuva."/>
-
+    <Separator/>
+    <View>
+      <PetInfo 
+        label={`MAIS SOBRE O ${pet.nome}`} 
+        info={pet.historia || 'Nenhuma informação adicional'}
+      />
     </View>
 
   </ScrollView>
@@ -225,7 +233,7 @@ export default function MeuPet() {
   const [pet, setPet] = useState<Animal>();
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const { user } = useAuth();
+  const { user } = useAuth() as any;
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
   useEffect(() => {
@@ -309,7 +317,7 @@ export default function MeuPet() {
     setLoading(true);
     const fetchPet = async () => {
     try{
-      const petDoc = await getDoc(doc(db, "animais", id));
+      const petDoc = await getDoc(doc(db, "animais", id as string));
       if(petDoc.exists()){
         const data = petDoc.data()
         setPet({
@@ -320,16 +328,15 @@ export default function MeuPet() {
           sexo: data.sexo,
           fotos: data.fotos,
   
-          vacinado: 'sim',
-          vermifugado: 'sim',
-          castrado: 'Não',
-          doencas: 'nenhuma',
-
-          temperamento: 'dócil',
+          saude: data.saude || [],
+          doencas: data.doencas || '',
+          temperamento: data.temperamento || [],
+          requisitosAdocao: data.requisitosAdocao || [],
+          mesesAdocao: data.mesesAdocao || [],
+          historia: data.historia || '',
 
           usuarioId: data.usuarioId,
           localizacao: data.localizacao,
-
         });
         setLoading(false);
       }
