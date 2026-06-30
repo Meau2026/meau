@@ -5,7 +5,7 @@ import { Image, StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-na
 
 
 import { Drawer } from 'expo-router/drawer';
-import { useNavigation } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import { DrawerActions } from '@react-navigation/native';
 
 
@@ -16,8 +16,9 @@ import { useAuth } from '@/contexts/AuthContext';
 
 
 export default function TelaInicial() {
-  const navigation = useNavigation();  
- const { user, loading } = useAuth();
+  const router = useRouter();
+  const navigation = useNavigation();
+  const { user, loading } = useAuth();
 
   return (
         <SafeAreaView style={styles.layout}>
@@ -49,7 +50,7 @@ export default function TelaInicial() {
               
                 <TouchableOpacity  onPress={() => {
                   if(user){
-                    navigation.navigate('cadastrar_animal');
+                    router.push('/cadastrar_animal');
                   }
                   else{
                     Alert.alert("É preciso estar logado para cadastrar animais");
@@ -60,7 +61,7 @@ export default function TelaInicial() {
                     <Text style={styles.button_text}>CADASTRAR ANIMAL</Text>
                 </TouchableOpacity>
                 { !user &&
-                <TouchableOpacity onPress={() => {navigation.navigate('login');}} style={[styles.button_entrar]}>
+                <TouchableOpacity onPress={() => {router.push('/login');}} style={[styles.button_entrar]}>
                    
                     <Text style={styles.login_text}>login</Text>
                 </TouchableOpacity>

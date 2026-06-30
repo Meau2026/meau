@@ -65,7 +65,6 @@ export default function CadastroPessoal() {
                
                 let currentLoc = await Location.getCurrentPositionAsync({
                     accuracy: Location.Accuracy.Balanced,
-                    timeout: 5000 
                 });
 
                 const userRegion = {

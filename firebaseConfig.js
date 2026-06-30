@@ -41,6 +41,7 @@ export const storage = getStorage(app);
 
 
 // usamos async storage pra manter user logado apos fechar o app
+/** @type {import('firebase/auth').Auth} */
 let auth;
 
 if (Platform.OS === 'web') {
