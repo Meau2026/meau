@@ -25,6 +25,11 @@ async function registerNotificationCategories() {
       buttonTitle: 'Rejeitar',
       options: { isDestructive: true, opensAppToForeground: false }, 
     },
+    {
+      identifier: 'CHAT_ACTION',
+      buttonTitle: 'Chat',
+      options: { opensAppToForeground: true },    },
+
   ]);
 }
 

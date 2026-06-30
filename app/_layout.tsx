@@ -431,14 +431,27 @@ useEffect(() => {
     const processarNotificacao = async () => {
       const actionIdentifier = lastNotificationResponse.actionIdentifier;
       const chatId = lastNotificationResponse.notification.request.content.data.chatId;
+      const petId = lastNotificationResponse.notification.request.content.data.petId;
+      const interessadoId = lastNotificationResponse.notification.request.content.data.interessadoId;
 
       if (!chatId) return;
 
       try {
-        const chatRef = doc(db, 'chats', chatId);
-
+        
         if (actionIdentifier === 'ACCEPT_ACTION') {
-          console.log("Usuário ACEITOU o chat!");
+
+
+          router.push({
+              pathname: '/finalizar_processo', 
+              params: {petId: petId, interessadoId: interessadoId}
+            });
+
+      
+        }
+
+        if (actionIdentifier === 'CHAT_ACTION') {
+          const chatRef = doc(db, 'chats', chatId);
+
           await updateDoc(chatRef, { status: '1' });
           
           const chatSnap = await getDoc(chatRef);
