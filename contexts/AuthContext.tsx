@@ -1,33 +1,42 @@
-import React, {createContext, useState, useEffect, useContext} from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import React, { createContext, useContext, useEffect, useState, PropsWithChildren } from 'react';
 import { auth } from '../firebaseConfig.js';
 
- const AuthContext = createContext({});
+// Define the shape of the authentication context
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+}
 
- export const AuthProvider = ({ children }) => {
+// Initialize context with undefined to enforce provider usage
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-  const [user, setUser] = useState(null);
+// AuthProvider component with properly typed children prop
+export const AuthProvider = ({ children }: PropsWithChildren<{}>) => {
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // e criado epenas 1 vez no startup do app
+  // Set up Firebase auth state listener once on component mount
   useEffect(() => {
-    
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
-    })
-
+    });
     return () => unsubscribe();
   }, []);
 
-
   return (
-    <AuthContext.Provider value={{ user, loading }} >
+    <AuthContext.Provider value={{ user, loading }}>
       {children}
     </AuthContext.Provider>
   );
+};
 
- };
-
-
- export const useAuth = () => useContext(AuthContext);
+// Hook to access authentication state safely
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};

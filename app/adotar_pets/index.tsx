@@ -5,7 +5,7 @@ import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 import { StatusBar } from 'expo-status-bar';
-import { collection, getDocs, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { getDownloadURL, ref } from 'firebase/storage';
 import React, { useEffect, useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -26,8 +26,8 @@ interface Animal {
   visivel: boolean;
   interessados: string[];
   temperamento: string;
-  localizacao: { latitude: number; longitude: number }; 
-  distanciaKm: number;   
+  localizacao: { latitude: number; longitude: number };
+  distanciaKm: number;
 }
 
 interface PageState {
@@ -39,15 +39,15 @@ function calcularDistancia(lat1: number, lon1: number, lat2: number, lon2: numbe
   const R = 6371;
   const dLat = (lat2 - lat1) * (Math.PI / 180);
   const dLon = (lon2 - lon1) * (Math.PI / 180);
-  const a = 
+  const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2); 
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
-  return R * c; 
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
 }
 
 function AnimalEntry({ animal }: { animal: Animal }) {
-  const [url, setUrl] = useState<string | null>(null);
+  const [url, setUrl] = useState<string>('');
   const router = useRouter();
 
   useEffect(() => {
@@ -56,8 +56,8 @@ function AnimalEntry({ animal }: { animal: Animal }) {
       .catch((e) => console.error(e));
   }, [animal]);
 
-  const textoDistancia = animal.distanciaKm !== 99999 
-    ? `A ${animal.distanciaKm.toFixed(1)} km de distância` 
+  const textoDistancia = animal.distanciaKm !== 99999
+    ? `A ${animal.distanciaKm.toFixed(1)} km de distância`
     : 'Localização não informada';
 
   return (
@@ -69,15 +69,20 @@ function AnimalEntry({ animal }: { animal: Animal }) {
         <Ionicons name="heart-outline" size={24} color='#434343' />
       </View>
 
-      <TouchableOpacity onPress={()=>{
-        router.push({ pathname:`/adotar_pets/${animal.id}`, params: {petData: JSON.stringify(animal)} });
+      <TouchableOpacity onPress={() => {
+        router.push({
+          pathname: "/adotar_pets/[id]",
+          params: { id: animal.id, petData: JSON.stringify(animal) }
+        });
       }}>
-        <Image
-          source={{ uri: url }}
-          style={styles.pet_foto}
-        />
+          {url ? (
+            <Image
+              source={{ uri: url }}
+              style={styles.pet_foto}
+            />
+          ) : null}
       </TouchableOpacity>
-      
+
       <View style={{ justifyContent: 'center', alignItems: 'center', flex: 1 }}>
         <View style={{ width: '80%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={styles.pet_info_text}> {animal.sexo} </Text>
@@ -85,8 +90,8 @@ function AnimalEntry({ animal }: { animal: Animal }) {
           <Text style={styles.pet_info_text}>{animal.porte} </Text>
         </View>
         <View>
-          <Text style={[styles.pet_info_text, { color: '#88c9bf', fontWeight: 'bold' }]}> 
-            {textoDistancia} 
+          <Text style={[styles.pet_info_text, { color: '#88c9bf', fontWeight: 'bold' }]}>
+            {textoDistancia}
           </Text>
         </View>
       </View>
@@ -95,14 +100,14 @@ function AnimalEntry({ animal }: { animal: Animal }) {
 }
 
 function AnimalList() {
-  const { user } = useAuth();
+  const { user } = useAuth() as any;
   const [pets, setPets] = useState<PageState>({ byId: {}, ids: [] });
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
-       let { status } = await Location.requestForegroundPermissionsAsync(); 
+        let { status } = await Location.requestForegroundPermissionsAsync();
         if (status === 'granted') {
           let location = await Location.getCurrentPositionAsync({});
           setUserLocation({
@@ -117,12 +122,12 @@ function AnimalList() {
   }, []);
 
 
- useEffect(() => {
+  useEffect(() => {
     // Só abre a conexão com o banco se o usuário E a localização já estiverem carregados
     if (!user?.uid || !userLocation) return;
 
     const animaisRef = collection(db, "animais");
-    
+
     // Otimização mantida: o servidor só envia os pets que estão visíveis
     const q = query(animaisRef, where("visivel", "==", true));
 
@@ -133,10 +138,10 @@ function AnimalList() {
       snapshot.forEach((animalDoc) => {
         const data = animalDoc.data();
 
-        
+
         if (data.usuarioId !== user.uid) {
-          
-         
+
+
           let distanciaCalculada = 99999;
           if (data.localizacao && typeof data.localizacao.latitude === 'number' && typeof data.localizacao.longitude === 'number') {
             distanciaCalculada = calcularDistancia(
@@ -147,7 +152,7 @@ function AnimalList() {
             );
           }
 
-          
+
           const pet: Animal = {
             id: animalDoc.id,
             nome: data.nome || "Sem Nome",
@@ -170,10 +175,10 @@ function AnimalList() {
         }
       });
 
-      
+
       arrayTemporario.sort((a, b) => a.distanciaKm - b.distanciaKm);
 
-      
+
       arrayTemporario.forEach(pet => {
         state.byId[pet.id] = pet;
         state.ids.push(pet.id);
@@ -182,11 +187,11 @@ function AnimalList() {
       setPets(state);
     });
 
-  
+
     return () => unsubscribe();
 
   }, [user?.uid, userLocation]);
-  
+
   return (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.animal_list}>
       {

@@ -5,7 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { addDoc, arrayUnion, collection, doc, GeoPoint, setDoc } from 'firebase/firestore';
+import { doc, GeoPoint, getDoc, updateDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -14,10 +14,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 
-import { useNavigation } from 'expo-router';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 
-export default function CadastroAnimal() {
+export default function AtualizarAnimal() {
 
 	const navigation = useNavigation();
 
@@ -38,6 +38,7 @@ export default function CadastroAnimal() {
 
 	const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 	const [region, setRegion] = useState<Region | null>(null);
+	const { id } = useLocalSearchParams();
 
 	useEffect(() => {
 		(async () => {
@@ -47,17 +48,57 @@ export default function CadastroAnimal() {
 				return;
 			}
 
-			const currentPos = await Location.getCurrentPositionAsync({});
-			const initialRegion = {
-				latitude: currentPos.coords.latitude,
-				longitude: currentPos.coords.longitude,
-				latitudeDelta: 0.01,
-				longitudeDelta: 0.01,
-			};
-			setRegion(initialRegion);
-			setLocation({ latitude: currentPos.coords.latitude, longitude: currentPos.coords.longitude });
+			// SÓ pega o GPS atual se a localização do pet ainda não tiver sido carregada pelo segundo useEffect
+			if (!location) {
+				const currentPos = await Location.getCurrentPositionAsync({});
+				const initialRegion = {
+					latitude: currentPos.coords.latitude,
+					longitude: currentPos.coords.longitude,
+					latitudeDelta: 0.01,
+					longitudeDelta: 0.01,
+				};
+				setRegion(initialRegion);
+				setLocation({ latitude: currentPos.coords.latitude, longitude: currentPos.coords.longitude });
+			}
 		})();
-	}, []);
+	}, [id]); // Adicionei id aqui para alinhar com o ciclo de vida
+
+	useEffect(() => {
+		(async () => {
+			if (!id) return;
+			try {
+				const animalDoc = doc(db, 'animais', id as string);
+				const animalSnap = await getDoc(animalDoc);
+				if (animalSnap.exists()) {
+					const data = animalSnap.data();
+					setNome(data.nome || '');
+					setFotos(data.fotos || []);
+					setSelectedSpecies(data.especie || null);
+					setSelectedGender(data.sexo || null);
+					setSelectedSize(data.porte || null);
+					setSelectedAge(data.idade || null);
+					setSelectedTemperament(data.temperamento || []);
+					setSelectedHealth(data.saude || []);
+					setSelectedAdoptionRequirements(data.requisitosAdocao || []);
+					setSelectedAdoptionMonths(data.mesesAdocao || []);
+					setDoencas(data.doencas || '');
+					setHistoria(data.historia || '');
+					if (data.localizacao) {
+						const geo = data.localizacao;
+						setLocation({ latitude: geo.latitude, longitude: geo.longitude });
+						setRegion({
+							latitude: geo.latitude,
+							longitude: geo.longitude,
+							latitudeDelta: 0.01,
+							longitudeDelta: 0.01,
+						});
+					}
+				}
+			} catch (e) {
+				console.error('Failed to fetch animal', e);
+			}
+		})();
+	}, [id]);
 
 	const handleAddPhoto = async () => {
 		const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
@@ -135,27 +176,43 @@ export default function CadastroAnimal() {
 		);
 	};
 
-	const handleAdoptButtonPress = async () => {
+	const handleUpdateButtonPress = async () => {
 		if (!user) {
-			Alert.alert('Atenção', 'Você precisa estar logado para cadastrar um animal.');
+			Alert.alert('Atenção', 'Você precisa estar logado para atualizar um animal.');
+			return;
+		}
+
+		if (!id) {
+			Alert.alert('Erro', 'ID do animal não encontrado para atualização.');
 			return;
 		}
 
 		try {
-			// Upload das fotos para o Storage
 			const uploadedUrls: string[] = [];
+
+			// Trata as fotos para não reenviar o que já é link remoto
 			for (let i = 0; i < fotos.length; i++) {
 				const uri = fotos[i];
-				const response = await fetch(uri);
-				const blob = await response.blob();
-				const storageRef = ref(storage, `animais/${user.uid}/${Date.now()}_${i}.jpg`);
-				await uploadBytes(storageRef, blob);
-				const downloadUrl = await getDownloadURL(storageRef);
-				uploadedUrls.push(downloadUrl);
+
+				if (uri.startsWith('http://') || uri.startsWith('https://')) {
+					// Se já for uma URL da internet/Firebase, mantém a mesma
+					uploadedUrls.push(uri);
+				} else {
+					// Se for um arquivo local (nova foto), faz o upload
+					const response = await fetch(uri);
+					const blob = await response.blob();
+					const storageRef = ref(storage, `animais/${user.uid}/${Date.now()}_${i}.jpg`);
+					await uploadBytes(storageRef, blob);
+					const downloadUrl = await getDownloadURL(storageRef);
+					uploadedUrls.push(downloadUrl);
+				}
 			}
 
-			// Salvar no Firestore
-			const animalRef = await addDoc(collection(db, 'animais'), {
+			// Referência do documento existente usando o ID vindo dos parâmetros
+			const animalDocRef = doc(db, 'animais', id as string);
+
+			// Atualiza apenas os campos modificados utilizando updateDoc
+			await updateDoc(animalDocRef, {
 				nome,
 				fotos: uploadedUrls,
 				especie: selectedSpecies,
@@ -166,24 +223,17 @@ export default function CadastroAnimal() {
 				saude: selectedHealth,
 				requisitosAdocao: selectedAdoptionRequirements,
 				mesesAdocao: selectedAdoptionMonths,
-				visivel: true,
-				interessados: [],
 				doencas,
 				historia,
-				usuarioId: user.uid,
 				localizacao: location ? new GeoPoint(location.latitude, location.longitude) : null,
-
+				// Opcional: você pode adicionar um campo 'atualizadoEm: new Date()' se desejar controlar o histórico
 			});
 
-			await setDoc(doc(db, 'users', user.uid), {
-				animais: arrayUnion(animalRef.id),
-			}, { merge: true });
-
-			Alert.alert('Sucesso', 'Animal cadastrado e vinculado ao seu usuário.');
+			Alert.alert('Sucesso', 'Informações do animal atualizadas com sucesso.');
 			router.replace('/');
 		} catch (error) {
-			console.log(error);
-			Alert.alert('Erro', 'Não foi possível cadastrar o animal.');
+			console.error(error);
+			Alert.alert('Erro', 'Não foi possível atualizar o animal.');
 		}
 	};
 
@@ -205,7 +255,7 @@ export default function CadastroAnimal() {
 				<TouchableOpacity onPress={() => { navigation.goBack(); }}>
 					<Ionicons name="arrow-back" size={24} color="#575757" />
 				</TouchableOpacity>
-				<Text style={styles.headerText}>Cadastro Animal</Text>
+				<Text style={styles.headerText}>Atualizar Animal</Text>
 			</View>
 
 			<ScrollView contentContainerStyle={styles.scrollContent}>
@@ -472,8 +522,8 @@ export default function CadastroAnimal() {
 					<ActivityIndicator size="small" color="#88C9BF" style={{ marginBottom: 20 }} />
 				)}
 
-				<TouchableOpacity style={styles.button} onPress={handleAdoptButtonPress}>
-					<Text style={styles.buttonText}>COLOCAR PARA ADOÇÃO</Text>
+				<TouchableOpacity style={styles.button} onPress={handleUpdateButtonPress}>
+					<Text style={styles.buttonText}>ATUALIZAR ANIMAL</Text>
 				</TouchableOpacity>
 			</ScrollView>
 		</SafeAreaView>

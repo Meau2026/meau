@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react'
-import { GiftedChat, Bubble, InputToolbar, Composer, Send } from 'react-native-gifted-chat'
+import { GiftedChat, Bubble, InputToolbar, Composer, Send, type BubbleProps, type InputToolbarProps, type ComposerProps, type SendProps, type IMessage } from 'react-native-gifted-chat'
 import { useHeaderHeight } from '@react-navigation/elements'
 
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,7 +27,7 @@ interface ChatData{
   foto: string; 
 };
 
-function CustomBubble(props) {
+function CustomBubble(props: BubbleProps<IMessage>) {
 
   return (
   <Bubble
@@ -64,7 +64,7 @@ function CustomBubble(props) {
 }
 
 
-function CustomInputToolbar(props){
+function CustomInputToolbar(props: InputToolbarProps<IMessage>) {
 
   return (
     <InputToolbar
@@ -72,7 +72,7 @@ function CustomInputToolbar(props){
       containerStyle={{
         backgroundColor: '#f1f2f2',
         borderTopWidth: 0,          
-        paddingpaddingBottom: 4,
+        paddingBottom: 4,
         paddingTop: 4,
       }}
       primaryStyle={{ alignItems: 'flex-end' }} 
@@ -80,7 +80,7 @@ function CustomInputToolbar(props){
   );
 }
 
-function CustomComposer(props){
+function CustomComposer(props: ComposerProps) {
 
 return (
     <Composer
@@ -103,7 +103,7 @@ return (
   );
 }
 
-function CustomSend(props){
+function CustomSend(props: SendProps<IMessage>) {
 
 return (
   <Send {...props} containerStyle={{ justifyContent: 'center', alignItems: 'center' }}>
@@ -120,7 +120,7 @@ return (
 export default function Chat() {
   const { chatInfo } = useLocalSearchParams(); 
   const [chat, setChat] = useState<ChatData | null>(null); 
-  const [messages, setMessages] = useState([])
+  const [messages, setMessages] = useState<IMessage[]>([])
   const [_loading, set_Loading] = useState(true);
   const router = useRouter();
 
@@ -145,6 +145,7 @@ export default function Chat() {
       return;
     }
    
+    if (!chatinfo?.id) return;
     const msgRef = collection(db, 'chats', chatinfo.id, 'mensagens');
     
     // pega as mensagens a partir da mais recente
@@ -152,37 +153,37 @@ export default function Chat() {
     const msgQuery = query(msgRef, orderBy('createdAt', 'desc'));
     
     const unsubscribe = onSnapshot(msgQuery, (snapshot) => {
-      const newMsgs = snapshot.docs.map(doc => {
-      const data = doc.data();
-
-      return {
-        _id: doc.id, 
-        ...data,
-        createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
-        };
+      const newMsgs: IMessage[] = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          _id: doc.id,
+          text: data.text ?? '',
+          createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
+          user: data.user ?? { _id: '' },
+          // include any other fields if needed
+        } as IMessage;
+      });
       
-    });
-
-    setMessages(newMsgs);
-    set_Loading(false);
+      setMessages(newMsgs);
+      set_Loading(false);
     }); 
     return () => unsubscribe();
   }, [chatInfo, user?.uid]);
 
-  const onSend = useCallback( async (messages = []) => {
-    if (messages.length === 0) return;
+  const onSend = useCallback( async (messages: IMessage[] = []) => {
+    if (messages.length === 0 || !chat?.id) return;
 
     const { text } = messages[0];
 
     try{
-      console.log(chat?.id);
-      const msgRef = collection(db, 'chats', chat?.id, 'mensagens');
+      console.log(chat.id);
+      const msgRef = collection(db, 'chats', chat.id, 'mensagens');
 
       await addDoc(msgRef, {
         text: text,
         createdAt: serverTimestamp(),
         user: {
-          _id: user.uid,
+          _id: user?.uid ?? '',
         },
       });
 
@@ -190,12 +191,12 @@ export default function Chat() {
       console.error("erro ao enviar mensagem: ", e);
     }
 
-  }, [chat?.id])
+  }, [chat?.id, user?.uid])
 
   const userInfo = useMemo(() => ({
-    _id: user?.uid,
-    name: "Testando",
-  }), [user?.uid]);
+    _id: user?.uid ?? 'unknown',
+    name: user?.displayName ?? "Usuário",
+  }), [user?.uid, user?.displayName]);
 
   if (loading || _loading) {
     return (
@@ -213,7 +214,7 @@ export default function Chat() {
       headerTitle: chat?.nomeUser || "",
       headerStyle: styles.drawer_header,
       headerLeft: () => (
-        <TouchableOpacity style={{marginLeft:12}}  onPress={() => router.replace('chat/meus_chats')}>
+        <TouchableOpacity style={{marginLeft:12}}  onPress={() => router.replace('/chat/meus_chats')}>
           <Ionicons name="arrow-back-outline" size={24} color='#434343' />
         </TouchableOpacity>
         ),
@@ -227,21 +228,22 @@ export default function Chat() {
     }}
   />
 
-    <GiftedChat
-      key={user?.uid}
-      messages={messages}
-      onSend={messages => onSend(messages)}
-      user={userInfo}
-      loadEarlier={false}
-      renderBubble={(props) => <CustomBubble {...props} />}
-      renderAvatar={null}
-      renderSend={(props) => <CustomSend {...props} />}
-      renderInputToolbar={(props) => <CustomInputToolbar {...props} />}
-      renderComposer={(props) => <CustomComposer {...props} />}
-      alwaysShowSend={true}
-      keyboardAvoidingViewProps={{ keyboardVerticalOffset: headerHeight }}
-      placeholder="Digite sua mensagem..."
-    />
+    <GiftedChat<IMessage>
+        key={user?.uid}
+        messages={messages as IMessage[]}
+        onSend={messages => onSend(messages as IMessage[])}
+        user={userInfo}
+        loadEarlier={false}
+        renderBubble={(props) => <CustomBubble {...props} />}
+        renderAvatar={null}
+        renderSend={(props) => <CustomSend {...props} />}
+        renderInputToolbar={(props) => <CustomInputToolbar {...props} />}
+        renderComposer={(props) => <CustomComposer {...props} />}
+        alwaysShowSend={true}
+        // keyboardAvoidingViewProps is not in TypeScript definitions; use any cast if needed
+        {...({ keyboardAvoidingViewProps: { keyboardVerticalOffset: headerHeight } } as any)}
+        placeholder="Digite sua mensagem..."
+      />
     </SafeAreaView>
   )
 }

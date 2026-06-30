@@ -32,10 +32,10 @@ const handleLogout = async () => {
 
 
 const createLocalNavegation = (props: DrawerContentComponentProps) => {
-  return (route) => {
+  return (route: string) => {
     props.navigation.navigate(route);
-  }
-}
+  };
+};
 
 const Separator = () => (<View style={styles.separator} />);
 

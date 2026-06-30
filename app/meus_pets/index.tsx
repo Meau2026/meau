@@ -56,10 +56,13 @@ function AnimalEntry({animal} : {animal : Animal} ){
 
     </View>
     <TouchableOpacity onPress={()=>{
-      router.push({ pathname: `/meus_pets/${animal.id}`, params: {petData: JSON.stringify(animal)} });
+      router.push({
+        pathname: "/meus_pets/[id]",
+        params: { id: animal.id, petData: JSON.stringify(animal) }
+      });
     }}>
     <Image
-      source={{ uri: url }}
+      source={url ? { uri: url } : undefined}
       style={styles.pet_foto}
     />
 
@@ -71,7 +74,7 @@ function AnimalEntry({animal} : {animal : Animal} ){
   );
 }
 
-function AnimalList( {user} ){
+function AnimalList( {user} : {user: any} ){
   
   const [pets, setPets] = useState<PageState>({ byId: {}, ids: []});
 
@@ -151,7 +154,7 @@ function AnimalList( {user} ){
 
 
 export default function MeusPets(){
-  const { user } = useAuth();
+  const { user } = useAuth() as any;
   
 
   

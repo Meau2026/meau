@@ -43,14 +43,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface UserInfo {
   nome: string;
-  fotoPerfil: string;
+  fotoPerfil?: string;
 }
 
 const createLocalNavegation = (props: DrawerContentComponentProps) => {
-  return (route) => {
+  // Explicitly type the route parameter as a string to satisfy TypeScript
+  return (route: string) => {
     props.navigation.navigate(route);
-  }
-}
+  };
+};
 
 const Separator = () => (<View style={styles.separator} />);
 
@@ -59,7 +60,7 @@ function Header(props: DrawerContentComponentProps) {
   const [expanded, setExpanded] = useState(false);
   const {user , loading } = useAuth();
   const navigate = createLocalNavegation(props)
-  const [userInfo, setUserInfo] = useState<UserInfo>({nome: "", fotoPerfil: null});
+  const [userInfo, setUserInfo] = useState<UserInfo>({nome: "", fotoPerfil: undefined});
   useEffect(() =>{
 
     const getUserData = async () => {
@@ -147,10 +148,10 @@ function Header(props: DrawerContentComponentProps) {
         <View style={styles.header}>
           
           <View style={styles.picture_placeholder}>
-          <Image 
-          source={{uri: userInfo.fotoPerfil}}
+<Image
+          source={userInfo.fotoPerfil ? {uri: userInfo.fotoPerfil} : undefined}
           style={styles.foto_perfil}
-          />
+        />
 
           </View>
           <View style={styles.header_expand_button}>
@@ -192,6 +193,12 @@ function Atalhos(props: DrawerContentComponentProps) {
         labelStyle={styles.text_entry}
 
         onPress={() => navigate('adotar_pets/index')}
+      />
+      <Separator />
+      <DrawerItem
+        label='Pets no mapa'
+        labelStyle={styles.text_entry}
+        onPress={() => navigate('mapa_panoramico')}
       />
     </View>
   );
@@ -382,9 +389,9 @@ const lastNotificationResponse = useLastNotificationResponse();
    
        const tokenSalvoLocalmente = await AsyncStorage.getItem('expoPushToken');
        // se o token ja tiver no storage ele ta no firebase, n precisa atualizar
-       
-        const userRef = doc(db, 'users', user.uid);
-        await updateDoc(userRef, {
+       if (token !== tokenSalvoLocalmente) {
+            const userRef = doc(db, 'users', user!.uid);
+            await updateDoc(userRef, {
               expoPushToken: token
             });
 

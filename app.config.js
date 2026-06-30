@@ -29,7 +29,7 @@ export default {
       permissions: [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
-        "POST_NOTIFICATIONS"
+        "POST_NOTIFICATIONS",
       ],
       config: {
         googleMaps: {
