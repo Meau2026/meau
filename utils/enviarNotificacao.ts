@@ -1,12 +1,14 @@
 
 
-export async function enviarNotificacaoPush(expoPushToken: string, title: string, body: string, data = {}) {
+export async function enviarNotificacaoPush(expoPushToken: string, title: string, body: string, data = {}, categoryId = "") {
   const mensagem = {
     to: expoPushToken,
     sound: 'default',
     title: title,
     body: body,
     data: data, 
+    categoryId: categoryId
+
   };
 
   try {
@@ -24,3 +26,6 @@ export async function enviarNotificacaoPush(expoPushToken: string, title: string
     console.error("Erro ao enviar a notificação:", error);
   }
 }
+
+
+

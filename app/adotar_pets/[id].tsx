@@ -22,7 +22,7 @@ import { Drawer } from 'expo-router/drawer';
 
 // Firebase Config e Funções
 import { db, storage } from '@/firebaseConfig';
-import { addDoc, arrayUnion, collection, doc, GeoPoint, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { addDoc, arrayUnion, collection, doc, GeoPoint, getDoc, getDocs, serverTimestamp, setDoc, query, where } from 'firebase/firestore';
 import { getDownloadURL, ref } from 'firebase/storage';
 
 
@@ -261,10 +261,27 @@ export default function MeuPet() {
         'Você precisa fazer login para iniciar o chat de adoção.',
         [{ text: 'OK' }]
       );
-      return;
+      
+      //return;
     }
 
     try {
+      // verifica se o chat ja existe
+      const chatsRef = collection(db, 'chats');
+      
+      const q = query(
+        chatsRef,
+        where('animalId', '==', pet.id),
+        where('interessadoId', '==', user.uid)
+      );
+      const querySnapshot = await getDocs(q);
+      // chat ja existe
+      //if (!querySnapshot.empty) {
+      //  alert("Você já enviou um pedido!");
+      //  return;
+      //}
+
+
       const chatRef = await addDoc(collection(db, 'chats'), {
         donoId: pet.usuarioId,
         interessadoId: user.uid,
@@ -295,16 +312,19 @@ export default function MeuPet() {
       // envia notificacao para o outro user (enviando pro proprio user pra teste)
       
     const userDoc = await getDoc(doc(db, 'users', user?.uid));
-
-    if (userDoc.exists()) {
+    const donoDoc = await getDoc(doc(db, 'users', pet.usuarioId));
+    if (userDoc.exists() && donoDoc.exists()) {
       const userData = userDoc.data(); 
         if (userData.expoPushToken) {
         
           await enviarNotificacaoPush(
             userData.expoPushToken, 
-            "teste", 
-            "testando", 
-            { chatId: chatRef.id } )
+            "Querem adotar seu pet!", 
+            `${userDoc.data().nome} quer adotar ${pet.nome}!`, 
+            { chatId: chatRef.id },
+            'REQUEST_ADOCAO'
+            
+          )
       }
     }
 

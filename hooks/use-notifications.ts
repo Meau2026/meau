@@ -13,6 +13,22 @@ Notifications.setNotificationHandler({
   }),
 });
 
+
+async function registerNotificationCategories() {
+  await Notifications.setNotificationCategoryAsync('REQUEST_ADOCAO', [
+    {
+      identifier: 'ACCEPT_ACTION',
+      buttonTitle: 'Aceitar',
+      options: { opensAppToForeground: true },    },
+    {
+      identifier: 'REJECT_ACTION',
+      buttonTitle: 'Rejeitar',
+      options: { isDestructive: true, opensAppToForeground: false }, 
+    },
+  ]);
+}
+
+
 export async function registerPushNotification(){
   let token;
 
@@ -48,7 +64,9 @@ export async function registerPushNotification(){
     } catch (e) {
       console.error(e);
     }
-  } 
+  }
+
+  await registerNotificationCategories();
   return token;
 
 }
