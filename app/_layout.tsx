@@ -416,6 +416,7 @@ const lastNotificationResponse = useLastNotificationResponse();
     
       }
     }
+    }
 
     setupNofitications();
   }, [user?.uid]);
