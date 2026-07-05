@@ -321,7 +321,7 @@ export default function MeuPet() {
             userData.expoPushToken, 
             "Querem adotar seu pet!", 
             `${userDoc.data().nome} quer adotar ${pet.nome}!`, 
-            { chatId: chatRef.id },
+            { chatId: chatRef.id, petId: pet.id, interessadoId:  user?.uid },
             'REQUEST_ADOCAO'
             
           )
