@@ -14,24 +14,6 @@ Notifications.setNotificationHandler({
 });
 
 
-async function registerNotificationCategories() {
-  await Notifications.setNotificationCategoryAsync('REQUEST_ADOCAO', [
-    {
-      identifier: 'ACCEPT_ACTION',
-      buttonTitle: 'Aceitar',
-      options: { opensAppToForeground: true },    },
-    {
-      identifier: 'REJECT_ACTION',
-      buttonTitle: 'Rejeitar',
-      options: { isDestructive: true, opensAppToForeground: false }, 
-    },
-    {
-      identifier: 'CHAT_ACTION',
-      buttonTitle: 'Chat',
-      options: { opensAppToForeground: true },    },
-
-  ]);
-}
 
 
 export async function registerPushNotification(){
@@ -71,7 +53,7 @@ export async function registerPushNotification(){
     }
   }
 
-  await registerNotificationCategories();
+
   return token;
 
 }
