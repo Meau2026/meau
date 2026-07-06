@@ -22,7 +22,7 @@ import { Drawer } from 'expo-router/drawer';
 
 // Firebase Config e Funções
 import { db, storage } from '@/firebaseConfig';
-import { addDoc, arrayUnion, collection, doc, GeoPoint, getDoc, getDocs, serverTimestamp, setDoc, query, where } from 'firebase/firestore';
+import { addDoc, arrayUnion, collection, doc, GeoPoint, getDoc, getDocs, serverTimestamp, setDoc, query, where, updateDoc } from 'firebase/firestore';
 import { getDownloadURL, ref } from 'firebase/storage';
 
 
@@ -249,89 +249,97 @@ export default function MeuPet() {
     })();
   }, []);
 
-  const handleCreateChat = async () => {
-    if (!pet) {
-      console.warn('Pet não carregado ainda.');
-      return;
+const handleCriarInteresse = async () => {
+  if (!pet) {
+    console.warn('Pet não carregado ainda.');
+    return;
+  }
+
+  if (!user) {
+    Alert.alert(
+      'Atenção',
+      'Você precisa fazer login para demonstrar interesse na adoção.',
+      [{ text: 'OK' }]
+    );
+    return;
+  }
+
+  try {
+    
+    
+    //if (pet.interesses_negados && pet.interesses_negados.includes(user.uid)) {
+    //  Alert.alert('Aviso', 'Infelizmente, o dono optou por não prosseguir com a sua solicitação para este pet.');
+    //  return;
+    //}
+
+      
+    const interessesRef = collection(db, 'interesses');
+    const q = query(
+      interessesRef,
+      where('animalId', '==', pet.id),
+      where('interessadoId', '==', user.uid)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+      Alert.alert('Aviso', 'Você já demonstrou interesse neste pet! Aguarde o retorno do dono.');
+     // return;
     }
 
-    if (!user) {
-      Alert.alert(
-        'Atenção',
-        'Você precisa fazer login para iniciar o chat de adoção.',
-        [{ text: 'OK' }]
-      );
-      
-      //return;
+    
+    const userDocRef = doc(db, 'users', user.uid);
+    const userDoc = await getDoc(userDocRef);
+    let nomeInteressado = 'Usuário';
+    let fotoInteressado = 'https://placehold.co/150.png';
+
+    if (userDoc.exists()) {
+      nomeInteressado = userDoc.data().nome || nomeInteressado;
+      fotoInteressado = userDoc.data().fotoUrl || fotoInteressado;
     }
 
-    try {
-      // verifica se o chat ja existe
-      const chatsRef = collection(db, 'chats');
-      
-      const q = query(
-        chatsRef,
-        where('animalId', '==', pet.id),
-        where('interessadoId', '==', user.uid)
-      );
-      const querySnapshot = await getDocs(q);
-      // chat ja existe
-      //if (!querySnapshot.empty) {
-      //  alert("Você já enviou um pedido!");
-      //  return;
-      //}
+    
+    const interesseRef = await addDoc(collection(db, 'interesses'), {
+      donoId: pet.usuarioId,
+      interessadoId: user.uid,
+      animalId: pet.id,
+      nomeInteressado: nomeInteressado,
+      fotoInteressado: fotoInteressado,
+      nomeAnimal: pet.nome,
+      createdAt: serverTimestamp(),
+    });
+
+    console.log('Interesse registrado com ID:', interesseRef.id);
+    
+    const petRef = doc(db, 'animais', pet.id);
+    await updateDoc(petRef, {
+      interessados: arrayUnion(user.uid)
+    });
+
+    Alert.alert('Sucesso!', 'Seu interesse foi enviado ao dono do pet.');
 
 
-      const chatRef = await addDoc(collection(db, 'chats'), {
-        donoId: pet.usuarioId,
-        interessadoId: user.uid,
-        animalId: pet.id,
-        status: 0,
-        createdAt: serverTimestamp(),
-      });
+    //envia notificacao
 
-      await addDoc(collection(db, 'chats', chatRef.id, 'mensagens'), {
-        user: {
-          _id: user.uid,
-        }, 
-        text: 'Olá! Tenho interesse neste pet e gostaria de conversar sobre a adoção.',
-        createdAt: serverTimestamp(),
-      });
-
-      await setDoc(doc(db, 'users', user.uid), {
-        chats: arrayUnion(chatRef.id),
-      }, { merge: true });
-
-      await setDoc(doc(db, 'users', pet.usuarioId), {
-        chats: arrayUnion(chatRef.id),
-      }, { merge: true });
-
-      console.log('Chat criado com ID:', chatRef.id);
-
-
-      // envia notificacao para o outro user (enviando pro proprio user pra teste)
-      
-    const userDoc = await getDoc(doc(db, 'users', user?.uid));
     const donoDoc = await getDoc(doc(db, 'users', pet.usuarioId));
-    if (userDoc.exists() && donoDoc.exists()) {
-      const userData = userDoc.data(); 
-        if (userData.expoPushToken) {
-        
-          await enviarNotificacaoPush(
-            userData.expoPushToken, 
-            "Querem adotar seu pet!", 
-            `${userDoc.data().nome} quer adotar ${pet.nome}!`, 
-            { chatId: chatRef.id, petId: pet.id, interessadoId:  user?.uid },
-            'REQUEST_ADOCAO'
-            
-          )
+    
+    if (donoDoc.exists()) {
+      const donoData = donoDoc.data(); 
+      if (donoData.expoPushToken) {
+        await enviarNotificacaoPush(
+          donoData.expoPushToken, 
+          "Querem adotar seu pet!", 
+          `${nomeInteressado} tem interesse em adotar o(a) ${pet.nome}!`, 
+          { interesseId: interesseRef.id, petId: pet.id, interessadoId: user.uid },
+          'REQUEST_ADOCAO'
+        );
       }
     }
 
-    } catch (e) {
-      console.error('Erro ao criar chat:', e);
-    }
+  } catch (e) {
+    console.error('Erro ao registrar interesse:', e);
   }
+};
+
 
   useEffect(() => {
     setLoading(true);
@@ -401,7 +409,7 @@ export default function MeuPet() {
     }}
   />
   
-  <Pet pet={pet} onPressAdotar={handleCreateChat} userLocation={userLocation} /> 
+  <Pet pet={pet} onPressAdotar={handleCriarInteresse} userLocation={userLocation} /> 
 
   </SafeAreaView >
   );

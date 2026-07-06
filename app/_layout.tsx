@@ -123,10 +123,10 @@ function Header(props: DrawerContentComponentProps) {
       </>
       }
       <DrawerItem
-        label='Favoritos'
+        label='Interessados'
         labelStyle={styles.text_entry}
 
-        onPress={() => navigate('index')}
+        onPress={() => navigate('interessados/index')}
       />
       <Separator />
       <DrawerItem
