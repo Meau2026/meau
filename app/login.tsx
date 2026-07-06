@@ -91,7 +91,7 @@ export default function FireBaseTest() {
 
 				/>
 				<TextInput
-					style={styles.input}
+					style={[styles.input, { fontFamily: undefined }]}
 					placeholder="Senha"
 					placeholderTextColor="#bdbdbd"
 					secureTextEntry={true}

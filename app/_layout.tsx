@@ -22,7 +22,7 @@ import * as Notifications from 'expo-notifications';
 import { useLastNotificationResponse} from 'expo-notifications';
 import { auth, db, storage } from '@/firebaseConfig';
 import { signOut } from 'firebase/auth';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc,getDocs, updateDoc, addDoc, setDoc, deleteField, arrayUnion, arrayRemove, collection, query, where, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { getDownloadURL, ref } from 'firebase/storage';
 
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
@@ -45,6 +45,40 @@ interface UserInfo {
   nome: string;
   fotoPerfil?: string;
 }
+
+interface ChatMessage {
+  id: string;
+  nomeUser: string;
+  nomeItem: string;
+  ultimaMensagem: string;
+  horario: string;
+  foto: string; 
+  timestamp: number;
+}
+
+
+
+async function registerNotificationCategories() {
+await Notifications.setNotificationCategoryAsync('REQUEST_ADOCAO', [
+  {
+    identifier: 'ACCEPT_ACTION',
+    buttonTitle: 'Aceitar',
+    options: { opensAppToForeground: true },    },
+  {
+    identifier: 'REJECT_ACTION',
+    buttonTitle: 'Rejeitar',
+    options: { isDestructive: true, opensAppToForeground: false }, 
+  },
+  {
+    identifier: 'CHAT_ACTION',
+    buttonTitle: 'Chat',
+    options: { opensAppToForeground: true },    },
+
+]);
+}
+registerNotificationCategories();
+
+
 
 const createLocalNavegation = (props: DrawerContentComponentProps) => {
   // Explicitly type the route parameter as a string to satisfy TypeScript
@@ -342,29 +376,38 @@ function Configuracoes(props: DrawerContentComponentProps) {
 
 
 function LogoutButton(props: DrawerContentComponentProps) {
-  const { user, loading } = useAuth();
- 
+  const { user } = useAuth(); 
 
   if(user){
-  return (
-    <TouchableOpacity
-      style={styles.logout_button}
-      onPress={async () => {
-        try {
-          await signOut(auth);
-          props.navigation.navigate('index');
-        } catch (error: any) {
+    return (
+      <TouchableOpacity
+        style={styles.logout_button}
+        onPress={async () => {
+          try {
+            
+            const userRef = doc(db, 'users', user.uid);
+            await updateDoc(userRef, {
+              expoPushToken: deleteField() 
+            });
+
+            await AsyncStorage.removeItem('expoPushToken');
+
+            await signOut(auth);
+            
+            props.navigation.navigate('index');
+            
+          } catch (error: any) {
+            console.error("Erro no logout: ", error);
             Alert.alert("Erro ao sair", error.message);
           }
-      }}
-    >
-      <Text> Sair </Text>
-    </TouchableOpacity>
-  );
+        }}
+      >
+        <Text> Sair </Text>
+      </TouchableOpacity>
+    );
   }
 
   return null;
-
 }
 
 function CustomDrawerContent(props: DrawerContentComponentProps) {
@@ -389,7 +432,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
  function RoutingControl() {
 
   const { user , loading } = useAuth();
-const lastNotificationResponse = useLastNotificationResponse();
+  const lastNotificationResponse = useLastNotificationResponse();
 
   //cadastra o user pra receber notificacao  
     useEffect(() =>{
@@ -423,83 +466,123 @@ const lastNotificationResponse = useLastNotificationResponse();
 
 
 // pro botao da notificacao de adocao levar pro chat
-useEffect(() => {
-    // Se o app abriu normalmente (sem clicar em notificação), ignora e sai.
+  useEffect(() => {
     if (!lastNotificationResponse) return;
 
-    // Se abriu por notificação, rodamos a lógica assíncrona
     const processarNotificacao = async () => {
-      const actionIdentifier = lastNotificationResponse.actionIdentifier;
-      const chatId = lastNotificationResponse.notification.request.content.data.chatId;
-      const petId = lastNotificationResponse.notification.request.content.data.petId;
-      const interessadoId = lastNotificationResponse.notification.request.content.data.interessadoId;
+    const actionIdentifier = lastNotificationResponse.actionIdentifier;
+    const data = lastNotificationResponse.notification.request.content.data;
+    
+    const interesseId = data.interesseId;
+    const petId = data.petId;
+    const interessadoId = data.interessadoId;
 
-      if (!chatId) return;
+    if (actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER) {
+      router.push('/interessados');
+      return;
+    }
 
-      try {
-        
-        if (actionIdentifier === 'ACCEPT_ACTION') {
+    if (!petId || !interessadoId) return;
 
-
-          router.push({
-              pathname: '/finalizar_processo', 
-              params: {petId: petId, interessadoId: interessadoId}
-            });
-
+    try {
+      if (actionIdentifier === 'ACCEPT_ACTION') {
+        router.push({
+          pathname: '/finalizar_processo', 
+          params: { petId: petId, userId: interessadoId }
+        });
+      } 
       
+      else if (actionIdentifier === 'REJECT_ACTION') {
+        const petRef = doc(db, 'animais', petId);
+        
+        await updateDoc(petRef, {
+          interesses_negados: arrayUnion(interessadoId),
+          interessados: arrayRemove(interessadoId)
+        });
+
+        if (interesseId) {
+          const interesseRef = doc(db, 'interesses', interesseId);
+          await deleteDoc(interesseRef);
         }
+        console.log("Interesse rejeitado com sucesso via notificação!");
+      } 
+      
+      else if (actionIdentifier === 'CHAT_ACTION') {
+        if (!user) return; 
 
-        if (actionIdentifier === 'CHAT_ACTION') {
-          const chatRef = doc(db, 'chats', chatId);
+        const chatsRef = collection(db, 'chats');
+        
+        const q = query(
+          chatsRef,
+          where('animalId', '==', petId),
+          where('interessadoId', '==', interessadoId),
+          where('donoId', '==', user.uid)
+        );
+        
+        const querySnapshot = await getDocs(q);
+        
+        let chatId = "";
+        let ultimaMsg = "Inicie a conversa...";
+        let tempoMs = Date.now(); 
 
-          await updateDoc(chatRef, { status: '1' });
+        if (!querySnapshot.empty) {
+          const chatDoc = querySnapshot.docs[0];
+          chatId = chatDoc.id;
           
-          const chatSnap = await getDoc(chatRef);
+          const chatData = chatDoc.data();
+          if (chatData.ultimaMensagem) ultimaMsg = chatData.ultimaMensagem;
+          if (chatData.createdAt) tempoMs = chatData.createdAt.toMillis();
+        } else {
+          // Chat não existe, cria um novo
+          const chatRef = await addDoc(collection(db, 'chats'), {
+            donoId: user.uid,
+            interessadoId: interessadoId,
+            animalId: petId,
+            status: 0,
+            createdAt: serverTimestamp(),
+            ultimaMensagem: "",
+          });
           
-          if (chatSnap.exists()) {
-            const chatData = chatSnap.data();
-            const outroId = chatData.interessadoId;
+          chatId = chatRef.id;
 
-            const [userDocSnap, animalDocSnap] = await Promise.all([
-              getDoc(doc(db, 'users', outroId)),
-              getDoc(doc(db, 'animais', chatData.animalId))
-            ]);
+         
 
-            const nomeUsuario = userDocSnap.exists() ? userDocSnap.data().nome?.toUpperCase() : 'USUÁRIO';
-            const nomeAnimal = animalDocSnap.exists() ? animalDocSnap.data().nome?.toUpperCase() : 'ANIMAL';
-            const dataAtualizacao = chatData.createdAt?.toDate() || new Date();
+        const [userDocSnap, animalDocSnap] = await Promise.all([
+          getDoc(doc(db, 'users', interessadoId)),
+          getDoc(doc(db, 'animais', petId))
+        ]);
 
-            const chatItem = {
-              id: chatId,
-              nomeUser: nomeUsuario,
-              nomeItem: `${nomeUsuario} | ${nomeAnimal}`,
-              ultimaMensagem: chatData.ultimaMensagem || 'Inicie a conversa...',
-              horario: dataAtualizacao.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              foto: userDocSnap.exists() ? userDocSnap.data().fotoUrl : 'https://placehold.co/150.png',
-              timestamp: dataAtualizacao.getTime(),
-            };
+        const nomeUsuario = userDocSnap.exists() ? userDocSnap.data().nome?.toUpperCase() : 'USUÁRIO';
+        const fotoUsuario = userDocSnap.exists() ? userDocSnap.data().fotoUrl : 'https://placehold.co/150.png';
+        const nomeAnimal = animalDocSnap.exists() ? animalDocSnap.data().nome?.toUpperCase() : 'ANIMAL';
 
-            // Redireciona com os dados montados
-            router.push({
-              pathname: '/chat/chat', 
-              params: { chatInfo: JSON.stringify(chatItem) }
-            });
-          } 
-          
-        } else if (actionIdentifier === 'REJECT_ACTION') {
-          console.log("Usuário REJEITOU o chat!");
-          await updateDoc(chatRef, { status: 'rejected' });
-        }
-      } catch (error) {
-        console.error("Erro ao atualizar status do chat:", error);
+        const dataAtual = new Date(tempoMs);
+        const horarioFormatado = dataAtual.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        const chatInfo: ChatMessage = { 
+          id: chatId,
+          nomeUser: nomeUsuario,
+          nomeItem: `${nomeUsuario} | ${nomeAnimal}`,
+          ultimaMensagem: ultimaMsg,
+          horario: horarioFormatado,
+          foto: fotoUsuario,
+          timestamp: tempoMs,
+        };
+
+        // Redireciona para o chat com as informações montadas
+        router.push({
+          pathname: '/chat/chat', 
+          params: { chatInfo: JSON.stringify(chatInfo) }
+        });
       }
-    };
+    } }
+    catch (error) {
+      console.error("Erro ao processar ação da notificação:", error);
+    }
+  };
 
-    // Executa a função 
-    processarNotificacao();
-
-  }, [lastNotificationResponse]); 
- 
+  processarNotificacao();
+}, [lastNotificationResponse, user]); 
   if(loading) {
     return(
       <View>
