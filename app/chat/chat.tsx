@@ -1,21 +1,21 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react'
-import { GiftedChat, Bubble, InputToolbar, Composer, Send, type BubbleProps, type InputToolbarProps, type ComposerProps, type SendProps, type IMessage } from 'react-native-gifted-chat'
-import { useHeaderHeight } from '@react-navigation/elements'
+import { useHeaderHeight } from '@react-navigation/elements';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Bubble, Composer, GiftedChat, InputToolbar, Send, type BubbleProps, type ComposerProps, type IMessage, type InputToolbarProps, type SendProps } from 'react-native-gifted-chat';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 
-import { StyleSheet, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
-import {  useRouter,  useLocalSearchParams} from 'expo-router';
 
 
 import { db } from '@/firebaseConfig';
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, onSnapshot, orderBy, query, serverTimestamp } from 'firebase/firestore';
 
-import {useAuth} from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 
 interface ChatData{
@@ -25,6 +25,7 @@ interface ChatData{
   ultimaMensagem: string;
   horario: string;
   foto: string; 
+  status?: number;
 };
 
 function CustomBubble(props: BubbleProps<IMessage>) {
@@ -235,10 +236,10 @@ export default function Chat() {
         user={userInfo}
         loadEarlier={false}
         renderBubble={(props) => <CustomBubble {...props} />}
-        renderAvatar={null}
-        renderSend={(props) => <CustomSend {...props} />}
-        renderInputToolbar={(props) => <CustomInputToolbar {...props} />}
-        renderComposer={(props) => <CustomComposer {...props} />}
+        renderAvatar={null}        
+        renderSend={chat?.status === 1 ? () => null : (props) => <CustomSend {...props} />}
+        renderInputToolbar={chat?.status === 1 ? () => null : (props) => <CustomInputToolbar {...props} />}
+        renderComposer={chat?.status === 1 ? () => null : (props) => <CustomComposer {...props} />}
         alwaysShowSend={true}
         // keyboardAvoidingViewProps is not in TypeScript definitions; use any cast if needed
         {...({ keyboardAvoidingViewProps: { keyboardVerticalOffset: headerHeight } } as any)}

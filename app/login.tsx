@@ -1,22 +1,22 @@
 
-import React, {useState, useEffect} from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity,View, Alert} from 'react-native';
+import React, { useState } from 'react';
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-import { Ionicons, FontAwesome } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 
-import { Drawer } from 'expo-router/drawer';
-import { useNavigation, useRouter } from 'expo-router';
 import { DrawerActions } from '@react-navigation/native';
+import { useNavigation, useRouter } from 'expo-router';
+import { Drawer } from 'expo-router/drawer';
 
 
 
 
-import { auth } from '../firebaseConfig'
+import { auth } from '../firebaseConfig';
 
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth'
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 
 
 
@@ -91,7 +91,7 @@ export default function FireBaseTest() {
 
 				/>
 				<TextInput
-					style={[styles.input, { fontFamily: undefined }]}
+					style={styles.input}
 					placeholder="Senha"
 					placeholderTextColor="#bdbdbd"
 					secureTextEntry={true}

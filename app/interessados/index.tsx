@@ -3,7 +3,7 @@ import { DrawerNavigationProp } from '@react-navigation/drawer';
 import { useNavigation } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -16,10 +16,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { db, storage } from '@/firebaseConfig';
+import { db } from '@/firebaseConfig';
 // ✅ onSnapshot adicionado nos imports do Firestore
-import { addDoc, arrayUnion, collection, doc, GeoPoint, getDoc, getDocs, serverTimestamp, setDoc, query, where, updateDoc, deleteDoc, onSnapshot, arrayRemove } from 'firebase/firestore';
-import { getDownloadURL, ref } from 'firebase/storage';
+import { addDoc, arrayRemove, arrayUnion, collection, deleteDoc, doc, getDocs, onSnapshot, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
 
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -157,36 +156,39 @@ const handleRejeitar = (item: Interessado) => {
         if (data.ultimaMensagem) ultimaMsg = data.ultimaMensagem;
         if (data.createdAt) tempoMs = data.createdAt.toMillis();
 
-      } else {
-        const chatRef = await addDoc(collection(db, 'chats'), {
-          donoId: user.uid,
-          interessadoId: item.userId,
-          animalId: item.petId,
-          status: 0,
-          createdAt: serverTimestamp(),
-          ultimaMensagem: "",
-        });
-        
-        chatId = chatRef.id;
-
-        const dataAtual = new Date(tempoMs);
-        const horarioFormatado = dataAtual.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-        const chatInfo: ChatMessage = {
-          id: chatId,
-          nomeUser: item.userName,
-          nomeItem: `${item.userName} | ${item.petName}`,
-          ultimaMensagem: ultimaMsg,
-          horario: horarioFormatado,
-          foto: item.userFoto,
-          timestamp: tempoMs,
-        };
-
-        router.push({
-          pathname: '/chat/chat',
-          params: { chatInfo: JSON.stringify(chatInfo) }
-        });
+      } else { // Se o chat não existe, cria um novo
+          const chatRef = await addDoc(collection(db, 'chats'), {
+            donoId: user.uid,
+            interessadoId: item.userId,
+            animalId: item.petId,
+            status: 0,
+            createdAt: serverTimestamp(),
+            ultimaMensagem: "",
+          });
+          
+          chatId = chatRef.id;
+          // tempoMs já é Date.now(), não precisa buscar do doc
       }
+
+      // Monta o objeto de informações do chat para navegação
+      const dataAtual = new Date(tempoMs);
+      const horarioFormatado = dataAtual.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      const chatInfo: ChatMessage = {
+        id: chatId,
+        nomeUser: item.userName,
+        nomeItem: `${item.userName} | ${item.petName}`,
+        ultimaMensagem: ultimaMsg,
+        horario: horarioFormatado,
+        foto: item.userFoto,
+        timestamp: tempoMs,
+      };
+
+      router.push({
+        pathname: '/chat/chat',
+        params: { chatInfo: JSON.stringify(chatInfo) }
+      });
+
     } catch (error) {
       console.error('Erro ao iniciar ou acessar chat:', error);
       Alert.alert('Erro', 'Não foi possível iniciar o chat.');

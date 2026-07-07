@@ -1,16 +1,16 @@
 
-import { StyleSheet, Text, TouchableOpacity, View, Image , ScrollView} from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
-import React, { useState, useEffect } from 'react';
-import { storage, db } from '@/firebaseConfig'; 
-import { ref, getDownloadURL } from 'firebase/storage';
-import { getDoc, doc } from 'firebase/firestore';
-import { Drawer } from 'expo-router/drawer'; 
+import { db, storage } from '@/firebaseConfig';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { Drawer } from 'expo-router/drawer';
+import { doc, getDoc } from 'firebase/firestore';
+import { getDownloadURL, ref } from 'firebase/storage';
+import React, { useEffect, useState } from 'react';
 
 interface Animal {
   id: string;
@@ -68,7 +68,7 @@ function AnimalEntry({animal} : {animal : Animal} ){
 
   </TouchableOpacity>
     <View style={{justifyContent: 'center', alignItems: 'center', flex: 1}}>
-      <Text style={styles.pet_interessados}> {animal.interessados} NOVOS INTERESSADOS </Text>
+      <Text style={styles.pet_interessados}> {animal.interessados?.length || 0} INTERESSADOS </Text>
     </View>
   </View>
   );
