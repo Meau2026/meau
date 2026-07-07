@@ -143,7 +143,7 @@ function Header(props: DrawerContentComponentProps) {
       <DrawerItem
         label='Meu perfil'
         labelStyle={styles.text_entry}
-        onPress={() => navigate('index')}
+        onPress={() => navigate('editar_usuario')}
       />
       <Separator />
           
