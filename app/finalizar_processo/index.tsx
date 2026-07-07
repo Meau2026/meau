@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Modal, Alert, ScrollView } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter, useLocalSearchParams } from 'expo-router';
 import { db } from '@/firebaseConfig';
-import { getDoc, doc, collection, query, where, getDocs } from 'firebase/firestore';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
+import { arrayRemove, arrayUnion, collection, doc, getDoc, getDocs, onSnapshot, query, runTransaction, where } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
+import { Alert, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface Pet {
   id: string;
@@ -29,76 +29,122 @@ export default function FinalizarProcesso() {
   const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
-    if(!user) return;
+    if (!user) return;
 
-    const carregarDados = async () => {
-      try {
-        const userDocRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userDocRef);
-        
-        let loadedPets: Pet[] = [];
-        if(userDoc.exists()) {
-          const userAnimals = userDoc.data().animais;
-          if (userAnimals) {
-            for (const animalUid of userAnimals) {
-              const petRef = doc(db, "animais", animalUid);
-              const petDoc = await getDoc(petRef);
-              if (petDoc.exists()) {
-                loadedPets.push({ id: petDoc.id, nome: petDoc.data().nome });
-              }
-            }
-          }
-        }
-        setPets(loadedPets);
-
-        const interessesRef = collection(db, 'interesses');
-        const q = query(interessesRef, where('donoId', '==', user.uid));
-        const interessesSnap = await getDocs(q);
-
-        const mapaInteressados: Record<string, Interessado[]> = {};
-        
-        interessesSnap.forEach((docSnap) => {
-          const data = docSnap.data();
-          const petId = data.animalId;
-          
-          if (!mapaInteressados[petId]) {
-            mapaInteressados[petId] = [];
-          }
-
-          mapaInteressados[petId].push({
-            userId: data.interessadoId,
-            nome: data.nomeInteressado || 'Usuário'
-          });
-        });
-
-        setInteressadosPorPet(mapaInteressados);
-
-        if (params.petId) {
-          setSelectedPetId(params.petId as string);
-          if (params.userId) {
-            setSelectedUserId(params.userId as string);
-          }
-        }
-      } catch(e) {
-        console.error("Erro ao carregar dados para finalizar processo:", e);
+    // Listener para os animais do usuário
+    const userDocRef = doc(db, "users", user.uid);
+    const unsubscribePets = onSnapshot(userDocRef, async (userDoc) => {
+      if (!userDoc.exists()) {
+        setPets([]);
+        return;
       }
-    };
 
-    carregarDados();
-  }, [user?.uid]);
+      const userAnimals = userDoc.data().animais || [];
+      if (userAnimals.length > 0) {
+        const petPromises = userAnimals.map(async (animalUid: string) => {
+          const petRef = doc(db, "animais", animalUid);
+          const petDoc = await getDoc(petRef);
+          if (petDoc.exists()) {
+            return { id: petDoc.id, nome: petDoc.data().nome };
+          }
+          return null;
+        });
+        const loadedPets = (await Promise.all(petPromises)).filter((p): p is Pet => p !== null);
+        setPets(loadedPets);
+      } else {
+        setPets([]);
+      }
+    }, (error) => {
+      console.error("Erro ao escutar pets do usuário:", error);
+    });
+
+    // Listener para os interesses
+    const interessesRef = collection(db, 'interesses');
+    const q = query(interessesRef, where('donoId', '==', user.uid));
+    const unsubscribeInteresses = onSnapshot(q, (interessesSnap) => {
+      const mapaInteressados: Record<string, Interessado[]> = {};
+      interessesSnap.forEach((docSnap) => {
+        const data = docSnap.data();
+        const petId = data.animalId;
+
+        if (!mapaInteressados[petId]) {
+          mapaInteressados[petId] = [];
+        }
+        mapaInteressados[petId].push({
+          userId: data.interessadoId,
+          nome: data.nomeInteressado || 'Usuário'
+        });
+      });
+      setInteressadosPorPet(mapaInteressados);
+    }, (error) => {
+      console.error("Erro ao escutar interesses:", error);
+    });
+    
+    return () => {
+      unsubscribePets();
+      unsubscribeInteresses();
+    };
+  }, [user]);
+
+  useEffect(() => {
+    // Seta os parâmetros da navegação sempre que eles mudarem
+    if (params.petId && typeof params.petId === 'string') {
+      setSelectedPetId(params.petId);
+      if (params.userId && typeof params.userId === 'string') {
+        setSelectedUserId(params.userId);
+      }
+    }
+  }, [params]);
 
   const handleSelecionarPet = (petId: string) => {
     setSelectedPetId(petId);
     setSelectedUserId(""); 
   };
 
-  const confirmarProcesso = () => {
-    setModalVisible(false);
-    const petSelecionado = pets.find(p => p.id === selectedPetId);
-    router.push({
-      pathname: '/finalizar_processo/processo_finalizado', 
-      params: { petName: petSelecionado?.nome || 'seu pet' }
-    });
+  const confirmarProcesso = async () => {
+    if (!user || !selectedPetId || !selectedUserId) {
+      Alert.alert("Erro", "Informações incompletas para finalizar o processo.");
+      return;
+    }
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        const animalRef = doc(db, "animais", selectedPetId);
+        const antigoDonoRef = doc(db, "users", user.uid);
+        const novoDonoRef = doc(db, "users", selectedUserId);
+
+        // 1. Atualiza o animal: novo dono e visibilidade
+        transaction.update(animalRef, { usuarioId: selectedUserId, visivel: false });
+
+        // 2. Remove o animal do antigo dono
+        transaction.update(antigoDonoRef, { animais: arrayRemove(selectedPetId) });
+
+        // 3. Adiciona o animal ao novo dono
+        transaction.update(novoDonoRef, { animais: arrayUnion(selectedPetId) });
+
+        // 4. Encontra e fecha o chat correspondente
+        const chatsRef = collection(db, 'chats');
+        const chatQuery = query(
+          chatsRef,
+          where('animalId', '==', selectedPetId),
+          where('donoId', '==', user.uid),
+          where('interessadoId', '==', selectedUserId)
+        );
+        
+        const chatSnapshots = await getDocs(chatQuery);
+        chatSnapshots.forEach((chatDoc) => {
+          if (chatDoc.exists()) {
+            transaction.update(chatDoc.ref, { status: 1 });
+          }
+        });
+      });
+
+      setModalVisible(false);
+      const petSelecionado = pets.find(p => p.id === selectedPetId);
+    } catch (error) {
+      console.error("Erro ao finalizar o processo de adoção: ", error);
+      Alert.alert("Erro", "Não foi possível concluir a adoção. Tente novamente.");
+    }
   };
 
   const interessadosAtuais = interessadosPorPet[selectedPetId] || [];

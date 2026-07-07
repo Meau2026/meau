@@ -5,7 +5,7 @@ import { DrawerNavigationProp } from '@react-navigation/drawer';
 import { useNavigation } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
-import { collection, doc, getDoc, getDocs, or, query, where,onSnapshot } from 'firebase/firestore';
+import { collection, doc, getDoc, onSnapshot, or, query, where } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -26,6 +26,7 @@ interface ChatMessage {
   horario: string;
   foto: string; 
   timestamp: number;
+  status?: number;
 }
 
 export default function ChatScreen() {
@@ -75,7 +76,8 @@ export default function ChatScreen() {
                 ultimaMensagem: data.ultimaMensagem || 'Inicie a conversa...',
                 horario: dataAtualizacao.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 foto: userDocSnap.exists() ? userDocSnap.data().fotoUrl : 'https://placehold.co/150.png',
-                timestamp: dataAtualizacao.getTime(),               };        
+                timestamp: dataAtualizacao.getTime(),
+                status: data.status || 0,               };        
 
 
             })
