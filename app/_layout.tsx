@@ -4,11 +4,11 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
+import { router } from 'expo-router';
 import {
   DrawerContentComponentProps,
   DrawerItem
 } from '@react-navigation/drawer';
-import { router } from 'expo-router';
 
 import { ActivityIndicator, Alert, Image, LayoutAnimation, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -16,14 +16,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Ionicons } from '@expo/vector-icons';
 
-import { auth, db, storage } from '@/firebaseConfig';
-import * as Notifications from 'expo-notifications';
-import { useLastNotificationResponse } from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
-import { signOut } from 'firebase/auth';
-import { addDoc, arrayRemove, arrayUnion, collection, deleteDoc, deleteField, doc, getDoc, getDocs, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
-import { getDownloadURL, ref } from 'firebase/storage';
 import React, { useEffect, useState } from 'react';
+import * as Notifications from 'expo-notifications';
+import { useLastNotificationResponse} from 'expo-notifications';
+import { auth, db, storage } from '@/firebaseConfig';
+import { signOut } from 'firebase/auth';
+import { doc, getDoc,getDocs, updateDoc, addDoc, setDoc, deleteField, arrayUnion, arrayRemove, collection, query, where, serverTimestamp, deleteDoc } from 'firebase/firestore';
+import { getDownloadURL, ref } from 'firebase/storage';
 
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 
@@ -143,7 +143,7 @@ function Header(props: DrawerContentComponentProps) {
       <DrawerItem
         label='Meu perfil'
         labelStyle={styles.text_entry}
-        onPress={() => navigate('editar_usuario')}
+        onPress={() => navigate('index')}
       />
       <Separator />
           
